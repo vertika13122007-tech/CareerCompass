@@ -1,3 +1,4 @@
+import bcrypt
 from app.utils.otp import generate_otp
 from app.utils.security import hash_password
 from fastapi import HTTPException
@@ -5,8 +6,11 @@ from datetime import datetime, timedelta, timezone
 from app.models.User import User
 from app.models.PendingUser import PendingUser
 from app.services.email_service import send_verification_email, welcome_email
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.schemas.user import UserCreate, VerifyOTP
+from app.schemas.user import UserCreate, VerifyOTP, UserLogin
+from app.utils.jwt import create_access_token,decode_access_token
+from app.schemas.auth import LoginResponse
 
 def _get_user_by_email(email,db):
     existing_user = db.query(User).filter(User.email == email).first()
@@ -72,8 +76,15 @@ def _create_user(
     db.add(new_user)
     return new_user
 
+
 def _delete_pending_user(pending_user,db):
     db.delete(pending_user)
+
+
+def _verify_password(login_password: str,hashed_password: str) -> bool:
+    login_bytes = login_password.encode('utf-8')
+    hashed_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(login_bytes,hashed_bytes)
 
 
 def signup(user: UserCreate, db: Session):
@@ -179,3 +190,57 @@ def verify_email(user: VerifyOTP, db: Session):
     return {
         "message": "Email has being verified successfully."
     }
+
+def _authenticate_user(
+    email: str,
+    password: str,
+    db: Session
+):
+    login_user = _get_user_by_email(email,db)
+
+    if not login_user:
+        raise HTTPException(
+            status_code= 401,
+            detail="Invalid email or Invalid password"
+        )
+    
+    password_verified = _verify_password(
+                        password,
+                        login_user.hashed_password)
+    
+    if not password_verified :
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or Invalid password"
+        )
+    
+    return login_user
+    
+
+def login_service(
+        form_data: OAuth2PasswordRequestForm,
+        db : Session):
+    
+    authenticated_user = _authenticate_user(
+        form_data.username,
+        form_data.password,
+        db
+    )
+    
+    data = {
+        "sub":str(authenticated_user.id)
+    }
+
+    access_token = create_access_token(data)
+    
+    return LoginResponse(
+        message="Login successful.",
+        access_token=access_token,
+        token_type="bearer",
+        user={
+            "id": authenticated_user.id,
+            "name": authenticated_user.name,
+            "email": authenticated_user.email
+        }
+    )
+    

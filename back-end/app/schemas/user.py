@@ -12,3 +12,12 @@ class VerifyOTP(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class UserProfile(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    model_config = {
+        "from_attributes":True
+    }
