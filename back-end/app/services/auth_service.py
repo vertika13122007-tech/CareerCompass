@@ -5,12 +5,13 @@ from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
 from app.models.User import User
 from app.models.PendingUser import PendingUser
-from app.services.email_service import send_verification_email, welcome_email
+from app.models.PasswordResetOTP import PasswordResetOTP
+from app.services.email_service import send_verification_email, welcome_email, send_password_reset_email
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, VerifyOTP, UserLogin
 from app.utils.jwt import create_access_token,decode_access_token
-from app.schemas.auth import LoginResponse
+from app.schemas.auth import LoginResponse, ForgotPasswordResponse, VerifyResetOTPResponse, ResetPasswordResponse
 
 def _get_user_by_email(email,db):
     existing_user = db.query(User).filter(User.email == email).first()
@@ -243,4 +244,190 @@ def login_service(
             "email": authenticated_user.email
         }
     )
+
+def _get_reset_record_by_user_id(id,db):
+    reset_password_user = db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == id).first()
+    return reset_password_user
+
+def hash_otp(otp:str):
+    hashed_otp = hash_password(otp)
+    return hashed_otp
     
+def _create_Reset_user(
+    user_id,
+    hashed_otp,
+    otp_expires_at,
+    db
+):
+    reset_otp = PasswordResetOTP(
+        user_id=user_id,
+        hashed_otp=hashed_otp,
+        otp_expires_at=otp_expires_at
+    )
+
+    db.add(reset_otp)
+    return reset_otp   
+
+def _update_reset_user(
+    reset_password_user,
+    hashed_otp,
+    otp_expires_at
+):
+
+    reset_password_user.hashed_otp = hashed_otp
+
+    reset_password_user.otp_expires_at = otp_expires_at
+
+    return reset_password_user
+
+
+def forgot_password_service(email: str,db):
+
+    logged_in_user = _get_user_by_email(email,db)
+
+    if not logged_in_user :
+        return ForgotPasswordResponse(
+            message="If an account exists, a password reset OTP has been sent."
+        )
+    
+    reset_passsword_user = _get_reset_record_by_user_id(logged_in_user.id,db)
+    
+    reset_otp = generate_otp(6)
+
+    hashed_otp = hash_otp(reset_otp)
+
+    otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+
+    if reset_passsword_user:
+        reset_passsword_user = _update_reset_user(reset_passsword_user,
+            hashed_otp,
+            otp_expires_at)
+        
+    else:
+        reset_passsword_user= _create_Reset_user(
+        logged_in_user.id,
+        hashed_otp,
+        otp_expires_at,db)
+
+    db.commit()
+    db.refresh(reset_passsword_user)
+
+    try:
+        send_password_reset_email(
+            logged_in_user.email,
+            reset_otp
+        )
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=500,
+            detail="Error occured while sending email."
+        )
+    
+    return ForgotPasswordResponse(
+        message="If an account exists. A reset OTP has been sent."
+    )
+
+
+def _verify_otp(reset_otp: str,hashed_otp: str) -> bool:
+    reset_otp_bytes = reset_otp.encode('utf-8')
+    hashed_otp_bytes = hashed_otp.encode('utf-8')
+    return bcrypt.checkpw(reset_otp_bytes,hashed_otp_bytes)
+
+
+def verify_reset_otp_service( email: str, reset_otp:str, db):
+
+    logged_in_user = _get_user_by_email(email,db)
+
+    if not logged_in_user :
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or OTP"
+        )
+    
+    reset_passsword_record = _get_reset_record_by_user_id(logged_in_user.id,db)
+
+    if not reset_passsword_record:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or OTP"
+        )
+    
+    if reset_passsword_record.otp_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or OTP ."
+        )
+
+    otp_verified = _verify_otp(
+                        reset_otp,
+                        reset_passsword_record.hashed_otp)
+    
+    if not otp_verified :
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or Invalid OTP"
+        )
+    
+    return VerifyResetOTPResponse(
+        message="OTP has been successfully verified"
+    )
+
+
+
+def _update_user_password(
+    user,
+    hashed_password,
+):
+    user.hashed_password = hashed_password
+
+    return user
+
+
+
+def reset_password_service( email: str, reset_otp:str, new_password:str, db):
+
+    logged_in_user = _get_user_by_email(email,db)
+
+    if not logged_in_user :
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or OTP"
+        )
+    
+    reset_passsword_record = _get_reset_record_by_user_id(logged_in_user.id,db)
+
+    if not reset_passsword_record:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or OTP"
+        )
+    
+    if reset_passsword_record.otp_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or OTP ."
+        )
+    
+    otp_verified = _verify_otp(
+                        reset_otp,
+                        reset_passsword_record.hashed_otp)
+    
+    if not otp_verified :
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or Invalid OTP"
+        )
+    
+    hashed_password = hash_password(new_password)
+
+    logged_in_user = _update_user_password(logged_in_user,hashed_password)
+
+    db.delete(reset_passsword_record)
+
+    db.commit()
+
+    return ResetPasswordResponse(
+        message=" Password has been updated "
+    )
+

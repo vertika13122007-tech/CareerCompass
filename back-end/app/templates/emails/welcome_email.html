@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome</title>
+<style>
+body{
+    margin:0;
+    background:#edf2ff;
+    font-family:Segoe UI,Arial,sans-serif;
+}
+
+.wrap{
+    padding:24px 12px;
+}
+
+.card{
+    width:100%;
+    max-width:600px;
+    margin:auto;
+    background:#fff;
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 18px 45px rgba(49,46,129,.18);
+}
+
+.hero{
+    background:linear-gradient(135deg,#1d4ed8,#4f46e5,#7c3aed);
+    padding:42px 28px;
+    text-align:center;
+    color:#fff;
+}
+
+.hero h1{
+    margin:0;
+    font-size:34px;
+    line-height:1.25;
+}
+
+.hero p{
+    margin-top:12px;
+    font-size:16px;
+}
+
+.content{
+    padding:36px;
+    color:#555;
+    line-height:1.8;
+    font-size:16px;
+}
+
+.grid{
+    background:#f8faff;
+    border:1px solid #d9dcff;
+    border-radius:16px;
+    padding:22px;
+    margin:28px 0;
+}
+
+.grid h3{
+    margin-top:0;
+    color:#312e81;
+}
+
+li{
+    margin:12px 0;
+}
+
+.btn{
+    text-align:center;
+    margin:34px 0;
+}
+
+.btn a{
+    display:inline-block;
+    padding:15px 34px;
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:#fff;
+    text-decoration:none;
+    border-radius:14px;
+    font-weight:bold;
+}
+
+.quote{
+    font-style:italic;
+    text-align:center;
+    color:#4f46e5;
+    font-size:18px;
+}
+
+.footer{
+    background:#fafafa;
+    text-align:center;
+    padding:24px;
+    color:#777;
+    font-size:13px;
+}
+@media only screen and (max-width:600px){
+
+    .wrap{
+        padding:16px 10px;
+    }
+
+    .card{
+        border-radius:18px;
+    }
+
+    .hero{
+        padding:32px 22px;
+    }
+
+    .hero h1{
+        font-size:28px;
+    }
+
+    .hero p{
+        font-size:15px;
+    }
+
+    .content{
+        padding:26px 22px;
+        font-size:15px;
+        line-height:1.7;
+    }
+
+    .grid{
+        padding:18px;
+    }
+
+    .grid h3{
+        font-size:20px;
+    }
+
+    li{
+        margin:10px 0;
+    }
+
+    .btn{
+        margin:28px 0;
+    }
+
+    .btn a{
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        padding:15px;
+        font-size:16px;
+    }
+
+    .quote{
+        font-size:16px;
+    }
+
+    .footer{
+        padding:20px;
+        font-size:12px;
+    }
+
+}
+</style></head><body><div class="wrap"><div class="card">
+<div class="hero"><h1>🎉 Welcome to CareerCompass AI</h1><p>Your journey starts now.</p></div>
+<div class="content">
+<p>Hi <strong>{{ name }}</strong>,</p>
+<p>Your account has been verified successfully. Welcome to CareerCompass AI — your AI companion for discovering careers, building skills, and preparing for internships and jobs.</p>
+<div class="grid">
+<h3>Your next milestones</h3>
+<ul>
+<li>👤 Complete your profile</li>
+<li>📄 Upload your resume</li>
+<li>🤖 Get AI career recommendations</li>
+<li>📚 Generate a personalized learning roadmap</li>
+<li>💼 Explore internships & opportunities</li>
+</ul>
+</div>
+<div class="btn"><a href="{{ dashboard_url }}">Launch CareerCompass</a></div>
+<p class="quote">"Small consistent steps create extraordinary careers."</p>
+<p>We're excited to be part of your journey.</p>
+</div>
+<div class="footer">Made with ❤️ by CareerCompass AI<br>© 2026 CareerCompass AI</div>
+</div></div></body></html>
+
