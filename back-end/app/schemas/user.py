@@ -21,3 +21,9 @@ class UserProfile(BaseModel):
     model_config = {
         "from_attributes":True
     }
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
