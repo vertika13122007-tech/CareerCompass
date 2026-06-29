@@ -33,6 +33,7 @@ from app.database import Base
 from app.models.User import User
 from app.models.PendingUser import PendingUser
 from app.models.PasswordResetOTP import PasswordResetOTP
+from app.models.Profile import Profile
 
 target_metadata = Base.metadata
 

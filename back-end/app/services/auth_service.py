@@ -10,7 +10,7 @@ from app.services.email_service import send_verification_email, welcome_email, s
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, VerifyOTP, UserLogin
-from app.utils.jwt import create_access_token,decode_access_token
+from app.utils.jwt import create_access_token
 from app.schemas.auth import LoginResponse, ForgotPasswordResponse, VerifyResetOTPResponse, ResetPasswordResponse
 
 def _get_user_by_email(email,db):

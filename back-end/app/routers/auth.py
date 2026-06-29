@@ -100,3 +100,4 @@ def reset_password(
         request.new_password,
         db
     )
+
