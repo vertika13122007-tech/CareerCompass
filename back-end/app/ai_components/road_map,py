@@ -1,0 +1,160 @@
+import os 
+from dotenv import load_dotenv
+import json
+
+from google import genai
+
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+client = genai.Client(
+    api_key=GEMINI_API_KEY
+)
+
+
+def generate_career_guidance(
+    student_name: str,
+    department: str,
+    graduation_year: int,
+    resume_summary: str,
+    target_role: str,
+    target_company: str | None,
+):
+
+    prompt = f"""
+You are an expert Software Engineering Career Mentor and Hiring Coach with experience mentoring students for top technology companies like Google, Microsoft, Amazon, Meta, Atlassian, and Adobe.
+
+Your job is to provide personalized, practical, and realistic career guidance.
+
+==========================
+STUDENT PROFILE
+==========================
+
+Name:
+{student_name}
+
+Department:
+{department}
+
+Graduation Year:
+{graduation_year}
+
+Resume Summary:
+{resume_summary}
+
+==========================
+CAREER GOAL
+==========================
+
+Target Role:
+{target_role}
+
+Target Company:
+{target_company or "Not specified"}
+
+==========================
+INSTRUCTIONS
+==========================
+
+Analyze the student's resume and career goal carefully.
+
+Your recommendations must be personalized.
+
+DO NOT recommend skills or technologies the student already demonstrates strong proficiency in unless they are essential for the target role.
+
+When suggesting learning resources:
+
+- Recommend high-quality and well-known resources.
+- Prefer official documentation, university courses, or respected platforms.
+- Mention WHY each resource is useful.
+
+When suggesting projects:
+
+- Recommend resume-worthy projects.
+- Projects should progressively increase in difficulty.
+- Projects should align with the target company and role.
+
+When suggesting certifications:
+
+- Recommend certifications only if they add genuine value.
+- Avoid unnecessary certifications.
+
+For the roadmap:
+
+Create an actionable roadmap divided into:
+
+• Next 1 Month
+• Next 3 Months
+• Next 6 Months
+
+Each roadmap should contain concrete tasks instead of generic advice.
+
+Examples:
+
+✓ Build a scalable REST API using FastAPI
+✓ Solve 150 medium LeetCode problems
+✓ Deploy a project on AWS
+✓ Learn Docker and containerize an application
+
+NOT:
+
+✗ Improve coding
+✗ Learn more Python
+
+==========================
+OUTPUT FORMAT
+==========================
+
+Return ONLY valid JSON.
+
+{{
+    "skill_recommendations": [
+        "..."
+    ],
+
+    "learning_resources": [
+        {{
+            "title": "",
+            "type": "",
+            "reason": ""
+        }}
+    ],
+
+    "project_suggestions": [
+        "..."
+    ],
+
+    "certifications": [
+        "..."
+    ],
+
+    "career_roadmap": {{
+        "next_1_month": [
+            "..."
+        ],
+        "next_3_months": [
+            "..."
+        ],
+        "next_6_months": [
+            "..."
+        ]
+    }}
+}}
+
+Do not include markdown.
+
+Do not include explanations outside JSON.
+
+Return valid JSON only.
+"""
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+
+    text = response.text.strip()
+    text = text.replace("```json", "").replace("```", "").strip()
+
+    return json.loads(text)

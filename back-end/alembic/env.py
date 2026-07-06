@@ -34,6 +34,7 @@ from app.models.User import User
 from app.models.PendingUser import PendingUser
 from app.models.PasswordResetOTP import PasswordResetOTP
 from app.models.Profile import Profile
+from app.models.Resume import Resume
 
 target_metadata = Base.metadata
 
