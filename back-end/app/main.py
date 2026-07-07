@@ -8,11 +8,13 @@ from app.models.Resume import Resume
 from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
 from app.routers.resume import router as resume_router
+from app.routers.job_preference import router as job_pref_router
 
 app = FastAPI();
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(resume_router)
+app.include_router(job_pref_router)
 
 Base.metadata.create_all(bind=engine)
 

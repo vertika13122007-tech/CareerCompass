@@ -27,3 +27,9 @@ class User(Base):
         back_populates="user",
         uselist=False
     )
+
+    job_preference = relationship(
+        "JobPreference",
+        back_populates="user",
+        uselist=False
+    )
