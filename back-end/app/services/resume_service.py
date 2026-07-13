@@ -3,6 +3,7 @@ import os
 import shutil
 import logging
 import logging
+import fitz
 from app.models.Resume import Resume
 from app.models.User import User
 from sqlalchemy.orm import Session
@@ -60,6 +61,65 @@ def _update_resume(
     return resume
 
 
+def _extract_text_from_pdf(
+        file_path: str
+) -> str :
+    
+    try:
+        with fitz.open(file_path) as document:
+
+            all_text = []
+
+            for page in document:
+
+                page_text = page.get_text()
+
+                if page_text.strip():
+                    all_text.append(page_text)
+
+
+            return "\n".join(all_text)
+    
+    except Exception:
+        logger.exception("There was a problem in opening the file.")
+
+        raise HTTPException(
+            status_code=status.HTTP_401_BAD_REQUEST,
+            detail="There was a problem in openeing the file."
+        )
+    
+
+def _clean_resume_text(
+        all_text: str
+) -> str :
+    
+    new_text = []
+
+    all_text = all_text.replace("\r\n","\n")
+
+    lines = all_text.split("\n")
+    
+    previous_line_empty = False
+
+    for line in lines:
+        
+        line = line.strip()
+
+        if not line :
+
+            if previous_line_empty == True:
+                continue
+
+            else:
+                new_text.append(line)
+                previous_line_empty = True
+
+        else:
+            new_text.append(line)
+            previous_line_empty = False
+    
+    return "\n".join(new_text)
+
 
 def upload_resume_service(
         file: UploadFile,
@@ -100,7 +160,7 @@ def upload_resume_service(
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file,buffer)
-    except Exception as e:
+    except Exception:
 
         logger.exception("Failed to save uploaded resume")
 
@@ -108,7 +168,21 @@ def upload_resume_service(
             status_code=500,
             detail="Failed to upload resume."
         )
-   
+    
+    try:
+        raw_text = _extract_text_from_pdf(file_path)
+        cleaned_text = _clean_resume_text(raw_text)
+
+    except Exception:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        logger.exception("Failed to extract text from the resume.")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to process uploaded resume."
+        )
 
     resume = _get_resume_by_user_id(logged_in_user.id,db)
 
@@ -123,7 +197,7 @@ def upload_resume_service(
             original_filename=file.filename,
             stored_filename=stored_filename,
             file_path=file_path,
-            extracted_text=None,
+            extracted_text=cleaned_text,
             db=db
         )
 
@@ -132,15 +206,34 @@ def upload_resume_service(
             original_filename=file.filename,
             stored_filename=stored_filename,
             file_path=file_path,
-            extracted_text=None,
+            extracted_text=cleaned_text,
             resume=resume
         )
 
-    db.commit()
+    try:
+        db.commit()
+
+    except Exception:
+        db.rollback()
+
+        if os.apth.exists(file_path):
+            os.remove(file_path)
+
+        logger.exception("Database transcation failed.")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save resume."
+        )
+
     db.refresh(resume)
     
-    if old_file_path and os.path.exists(old_file_path):
-        os.remove(old_file_path)
+    
+    try:
+        if old_file_path and os.path.exists(old_file_path):
+            os.remove(old_file_path)
+    except Exception:
+        logger.exception("Failed to delete previous resume.")
 
     return ResumeUpload(
         message="Uploaded Sucessfully."
@@ -192,4 +285,3 @@ def delete_resume_service(
     return ResumeDeleteResponse(
         message="Resume has been Deleted Successfully."
     )
-
