@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
 class ResumeUpload(BaseModel):
@@ -22,3 +22,18 @@ class EducationEntry(BaseModel):
     start_year: int | None = None
     end_year: int | None = None
     cgpa: float | None = None
+
+
+class ExperienceEntry(BaseModel):
+    job_title: str | None = None
+    company: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    description: list[str] = Field(default_factory=list)
+
+
+class ProjectEntry(BaseModel):
+    title: str | None = None
+    technologies: list[str] = Field(default_factory=list)
+    description: list[str] = Field(default_factory=list)
+    link: str | None = None

@@ -17,12 +17,22 @@ RESUME_SECTION_HEADERS = {
         "projects",
         "personal projects",
         "academic projects",
+        "key projects",
     ],
 
     "experience": [
         "experience",
         "work experience",
         "professional experience",
+    ],
+
+    "achievements": [
+        "achievements",
+        "awards",
+        "honors",
+        "extracurriculars",
+        "achievements & awards",
+        "honors & awards",
     ],
 
     "certifications": [

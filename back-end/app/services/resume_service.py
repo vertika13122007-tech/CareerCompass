@@ -9,6 +9,7 @@ from app.models.User import User
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 from fastapi import HTTPException,status
+from fastapi.encoders import jsonable_encoder
 from app.schemas.resume import ResumeResponse, ResumeUpload, ResumeDeleteResponse
 from app.services.resume_parser import parse_resume
 
@@ -177,7 +178,12 @@ def upload_resume_service(
     try:
         raw_text = _extract_text_from_pdf(file_path)
         cleaned_text = _clean_resume_text(raw_text)
-        parsed_resume = parse_resume(cleaned_text)
+
+        # Parse the resume text
+        raw_parsed_resume = parse_resume(cleaned_text)
+
+        # Convert Pydantic models to standard JSON-serializable dictionaries
+        safe_parsed_resume = jsonable_encoder(raw_parsed_resume)
 
     except Exception:
         if os.path.exists(file_path):
@@ -204,7 +210,7 @@ def upload_resume_service(
             stored_filename=stored_filename,
             file_path=file_path,
             extracted_text=cleaned_text,
-            parsed_resume=parsed_resume,
+            parsed_resume=safe_parsed_resume,
             db=db
         )
 
@@ -214,7 +220,7 @@ def upload_resume_service(
             stored_filename=stored_filename,
             file_path=file_path,
             extracted_text=cleaned_text,
-            parsed_resume=parsed_resume,
+            parsed_resume=safe_parsed_resume,
             resume=resume
         )
 
@@ -224,10 +230,13 @@ def upload_resume_service(
     except Exception:
         db.rollback()
 
-        if os.apth.exists(file_path):
+        if os.path.exists(file_path):
             os.remove(file_path)
 
         logger.exception("Database transcation failed.")
+
+        import traceback
+        traceback.print_exc()
 
         raise HTTPException(
             status_code=500,

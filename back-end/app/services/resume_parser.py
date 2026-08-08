@@ -1,10 +1,11 @@
 import re
 from app.constants.skills import KNOWN_SKILLS
 from app.constants.degree import KNOWN_DEGREES
-from app.schemas.resume import EducationEntry
+from app.schemas.resume import EducationEntry, ExperienceEntry
 from app.constants.patterns import (
     YEAR_PATTERN,
     CGPA_PATTERN,
+    DATE_RANGE_PATTERN,
 )
 
 from app.constants.resume_section import RESUME_SECTION_HEADERS
@@ -253,6 +254,117 @@ def _extract_institution(
     return None
 
 
+def _split_experience_blocks(
+    experience_text: str,
+) -> list[str]:
+    """
+    Split the experience section text into individual experience blocks separated by blank lines.
+    """
+
+    if not experience_text:
+        return []
+
+    raw_blocks = re.split(r"\n\s*\n", experience_text)
+
+    blocks = []
+
+    for raw_block in raw_blocks:
+
+        block = raw_block.strip()
+
+        if block:
+            blocks.append(block)
+
+    return blocks
+
+
+def _extract_experience_dates(
+    block: str,
+) -> tuple[str | None, str | None]:
+    """
+    Extract start and end dates from an experience block using DATE_RANGE_PATTERN.
+    """
+
+    if not block:
+        return None, None
+
+    match = DATE_RANGE_PATTERN.search(block)
+
+    if not match:
+        return None, None
+
+    start_date = match.group(1).strip() if match.group(1) else None
+    end_date = match.group(2).strip() if match.group(2) else None
+
+    return start_date, end_date
+
+
+def _extract_bullets(
+    block: str,
+) -> list[str]:
+    """
+    Extract bullet point descriptions from an experience block.
+    """
+
+    if not block:
+        return []
+
+    bullets = []
+
+    bullet_chars = ("•", "-", "*", "▪", ">", "●", "–")
+
+    for raw_line in block.split("\n"):
+
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if line.startswith(bullet_chars):
+
+            cleaned_line = line.lstrip("•-*▪>●– ").strip()
+
+            if cleaned_line:
+                bullets.append(cleaned_line)
+
+    return bullets
+
+
+def _extract_title_and_company(
+    block: str,
+) -> tuple[str | None, str | None]:
+    """
+    Extract job title and company from the header lines of an experience block.
+    """
+
+    if not block:
+        return None, None
+
+    bullet_chars = ("•", "-", "*", "▪", ">", "●", "–")
+
+    remaining_lines = []
+
+    for raw_line in block.split("\n"):
+
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if line.startswith(bullet_chars):
+            continue
+
+        if DATE_RANGE_PATTERN.search(line):
+            continue
+
+        remaining_lines.append(line)
+
+    job_title = remaining_lines[0] if len(remaining_lines) > 0 else None
+    company = remaining_lines[1] if len(remaining_lines) > 1 else None
+
+    return job_title, company
+
+
 def extract_skills(
     resume_text: str,
 ) -> list[str]:
@@ -269,16 +381,21 @@ def extract_skills(
 
 
 def extract_education(
-    education_section: str,
+    resume_text: str,
 ) -> list[EducationEntry]:
     """
-    Extract structured education entries from the education section text.
+    Extract structured education entries from resume text.
     """
 
-    if not education_section:
+    section = _extract_section(
+        resume_text,
+        RESUME_SECTION_HEADERS["education"],
+    )
+
+    if not section:
         return []
 
-    blocks = _split_education_blocks(education_section)
+    blocks = _split_education_blocks(section)
 
     education_entries = []
 
@@ -300,6 +417,75 @@ def extract_education(
         education_entries.append(entry)
 
     return education_entries
+
+
+def extract_projects(
+    resume_text: str,
+) -> list:
+    """
+    Extract projects from resume text (placeholder stub).
+    """
+
+    return []
+
+
+def extract_experience(
+    resume_text: str,
+) -> list[ExperienceEntry]:
+    """
+    Extract structured work experience entries from resume text.
+    """
+
+    section = _extract_section(
+        resume_text,
+        RESUME_SECTION_HEADERS["experience"],
+    )
+
+    if not section:
+        return []
+
+    blocks = _split_experience_blocks(section)
+
+    experience_entries = []
+
+    for block in blocks:
+
+        start_date, end_date = _extract_experience_dates(block)
+        job_title, company = _extract_title_and_company(block)
+        description = _extract_bullets(block)
+
+        entry = ExperienceEntry(
+            job_title=job_title,
+            company=company,
+            start_date=start_date,
+            end_date=end_date,
+            description=description,
+        )
+
+        experience_entries.append(entry)
+
+    return experience_entries
+
+
+def extract_certifications(
+    resume_text: str,
+) -> list:
+    """
+    Extract certifications from resume text (placeholder stub).
+    """
+
+    return []
+
+
+def extract_languages(
+    resume_text: str,
+) -> list:
+    """
+    Extract languages from resume text (placeholder stub).
+    """
+
+    return []
+
 
 PARSERS = {
     "skills": extract_skills,
