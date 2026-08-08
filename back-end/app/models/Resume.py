@@ -8,6 +8,7 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.database import Base
 
@@ -31,6 +32,8 @@ class Resume(Base):
     file_path = Column(String(500), nullable=False)
 
     extracted_text = Column(Text, nullable=True)
+
+    parsed_resume = Column(JSONB,nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

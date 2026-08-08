@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from fastapi import UploadFile
 from fastapi import HTTPException,status
 from app.schemas.resume import ResumeResponse, ResumeUpload, ResumeDeleteResponse
+from app.services.resume_parser import parse_resume
 
 MAX_FILE_SIZE = 5 * 1024 * 1024 #5MB
 
@@ -33,6 +34,7 @@ def _create_resume(
     stored_filename:str,
     file_path:str,
     extracted_text:str | None,
+    parsed_resume:dict,
     db:Session
 ):
     resume = Resume(
@@ -41,6 +43,7 @@ def _create_resume(
         stored_filename=stored_filename,
         file_path=file_path,
         extracted_text=extracted_text,
+        parsed_resume=parsed_resume
     )
 
     db.add(resume)
@@ -51,12 +54,14 @@ def _update_resume(
     stored_filename:str,
     file_path:str,
     extracted_text:str | None,
+    parsed_resume: dict,
     resume: Resume
 ): 
     resume.original_filename = original_filename
     resume.stored_filename = stored_filename
     resume.file_path = file_path
     resume.extracted_text = extracted_text
+    resume.parsed_resume = parsed_resume
 
     return resume
 
@@ -172,6 +177,7 @@ def upload_resume_service(
     try:
         raw_text = _extract_text_from_pdf(file_path)
         cleaned_text = _clean_resume_text(raw_text)
+        parsed_resume = parse_resume(cleaned_text)
 
     except Exception:
         if os.path.exists(file_path):
@@ -198,6 +204,7 @@ def upload_resume_service(
             stored_filename=stored_filename,
             file_path=file_path,
             extracted_text=cleaned_text,
+            parsed_resume=parsed_resume,
             db=db
         )
 
@@ -207,6 +214,7 @@ def upload_resume_service(
             stored_filename=stored_filename,
             file_path=file_path,
             extracted_text=cleaned_text,
+            parsed_resume=parsed_resume,
             resume=resume
         )
 

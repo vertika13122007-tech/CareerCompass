@@ -14,3 +14,11 @@ class ResumeResponse(BaseModel):
 
 class ResumeDeleteResponse(BaseModel):
     message: str
+
+
+class EducationEntry(BaseModel):
+    degree: str | None = None
+    institution: str | None = None
+    start_year: int | None = None
+    end_year: int | None = None
+    cgpa: float | None = None
