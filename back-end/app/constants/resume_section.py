@@ -38,9 +38,17 @@ RESUME_SECTION_HEADERS = {
     "certifications": [
         "certifications",
         "certificates",
+        "licenses & certifications",
+        "certifications & licenses",
+        "certifications and licenses",
+        "licenses and certifications",
+        "courses & certifications",
     ],
 
     "languages": [
         "languages",
+        "languages spoken",
+        "spoken languages",
+        "language proficiency",
     ],
 }

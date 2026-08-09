@@ -1,7 +1,7 @@
 import re
 from app.constants.skills import KNOWN_SKILLS
 from app.constants.degree import KNOWN_DEGREES
-from app.schemas.resume import EducationEntry, ExperienceEntry
+from app.schemas.resume import EducationEntry, ExperienceEntry, ProjectEntry
 from app.constants.patterns import (
     YEAR_PATTERN,
     CGPA_PATTERN,
@@ -105,7 +105,7 @@ def _normalize_skill_list(
     seen = set()
 
     for line in skills_text.split("\n"):
-        skill = line.strip()
+        skill = line.strip().lstrip("•-*▪>●– ").strip()
         if not skill:
             continue
 
@@ -421,12 +421,78 @@ def extract_education(
 
 def extract_projects(
     resume_text: str,
-) -> list:
+) -> list[ProjectEntry]:
     """
-    Extract projects from resume text (placeholder stub).
+    Extract structured project entries from resume text.
     """
 
-    return []
+    section = _extract_section(
+        resume_text,
+        RESUME_SECTION_HEADERS["projects"],
+    )
+
+    if not section:
+        return []
+
+    raw_blocks = re.split(r"\n\s*\n", section)
+
+    project_entries = []
+
+    bullet_chars = ("•", "-", "*", "▪", ">", "●", "–")
+
+    for raw_block in raw_blocks:
+
+        block = raw_block.strip()
+
+        if not block:
+            continue
+
+        lines = [line.strip() for line in block.split("\n") if line.strip()]
+
+        bullets = _extract_bullets(block)
+
+        # Heuristic: If all or almost all lines are bullets, treat as single-line projects
+        if lines and len(bullets) >= len(lines):
+
+            for bullet in bullets:
+
+                title_parts = re.split(r"\s*[\-\–\:]\s*", bullet, maxsplit=1)
+                title = title_parts[0].strip() if title_parts else bullet.strip()
+
+                link_match = re.search(r"https?://[^\s]+", bullet)
+                link = link_match.group(0).rstrip(".,)") if link_match else None
+
+                entry = ProjectEntry(
+                    title=title or None,
+                    technologies=_find_known_skills(bullet),
+                    description=[bullet],
+                    link=link,
+                )
+
+                project_entries.append(entry)
+
+        else:
+
+            non_bullet_lines = [l for l in lines if not l.startswith(bullet_chars)]
+
+            if non_bullet_lines:
+                title = non_bullet_lines[0].lstrip("# ").strip()
+            else:
+                title = lines[0].lstrip("•-*▪>●–# ").strip()
+
+            link_match = re.search(r"https?://[^\s]+", block)
+            link = link_match.group(0).rstrip(".,)") if link_match else None
+
+            entry = ProjectEntry(
+                title=title or None,
+                technologies=_find_known_skills(block),
+                description=bullets,
+                link=link,
+            )
+
+            project_entries.append(entry)
+
+    return project_entries
 
 
 def extract_experience(
@@ -469,22 +535,38 @@ def extract_experience(
 
 def extract_certifications(
     resume_text: str,
-) -> list:
+) -> list[str]:
     """
-    Extract certifications from resume text (placeholder stub).
+    Extract certifications from resume text.
     """
 
-    return []
+    section = _extract_section(
+        resume_text,
+        RESUME_SECTION_HEADERS["certifications"],
+    )
+
+    if not section:
+        return []
+
+    return _normalize_skill_list(section)
 
 
 def extract_languages(
     resume_text: str,
-) -> list:
+) -> list[str]:
     """
-    Extract languages from resume text (placeholder stub).
+    Extract languages from resume text.
     """
 
-    return []
+    section = _extract_section(
+        resume_text,
+        RESUME_SECTION_HEADERS["languages"],
+    )
+
+    if not section:
+        return []
+
+    return _normalize_skill_list(section)
 
 
 PARSERS = {
