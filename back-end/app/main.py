@@ -10,6 +10,9 @@ from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
 from app.routers.resume import router as resume_router
 from app.routers.job_preference import router as job_pref_router
+from app.routers.ai import router as ai_router
+
+from app.services.ai.local_ml import LocalMLService
 
 ml_models = {}
 
@@ -18,7 +21,7 @@ ml_models = {}
 async def lifespan(app: FastAPI):
     # Load the ML models here
     print("🚀 Loading ML models into memory...")
-    ml_models["dummy_model"] = "Model loaded successfully!" # Placeholder for real models
+    ml_models["local_ml"] = LocalMLService()
     yield
     # Clean up resources on shutdown
     print("🛑 Cleaning up ML models...")
@@ -30,6 +33,8 @@ app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(resume_router)
 app.include_router(job_pref_router)
+app.include_router(ai_router)
+
 
 Base.metadata.create_all(bind=engine)
 
