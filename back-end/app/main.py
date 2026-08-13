@@ -11,6 +11,7 @@ from app.routers.profile import router as profile_router
 from app.routers.resume import router as resume_router
 from app.routers.job_preference import router as job_pref_router
 from app.routers.ai import router as ai_router
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.ai.local_ml import LocalMLService
 
@@ -38,6 +39,13 @@ app.include_router(ai_router)
 
 Base.metadata.create_all(bind=engine)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], # Allows your Next.js frontend
+    allow_credentials=True,
+    allow_methods=["*"], # Allows GET, POST, etc.
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():
