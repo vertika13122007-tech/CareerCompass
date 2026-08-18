@@ -182,26 +182,37 @@ def analyze_gap(
 @router.post("/chat")
 def chat(
     request: ChatMessageRequest,
-    logged_in_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Interactive Career Coach AI chatbot endpoint that maintains chat history and candidate resume context.
     """
-    resume = db.query(Resume).filter(Resume.user_id == logged_in_user.id).first()
+    
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    
     if not resume:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No resume found. Please upload a resume first."
-        )
-
-    parsed_data = resume.parsed_resume or resume.extracted_text or {}
+        print("🚨 DATABASE CHECK: NO RESUME FOUND AT ALL!")
+        parsed_data = {}
+    else:
+        print(f"✅ DATABASE CHECK: RESUME FOUND! (Resume ID: {resume.id})")
+        
+        raw_data = resume.parsed_resume or resume.extracted_text
+        
+        if isinstance(raw_data, str):
+            try:
+                parsed_data = json.loads(raw_data)
+            except Exception:
+                parsed_data = {"text": raw_data}
+        else:
+            parsed_data = raw_data or {}
+            
+        print(f"🧠 DATA PASSED TO KIKI: {str(parsed_data)[:150]}...") # Print the first 150 characters to terminal
 
     gemini_service = GeminiService()
     reply = gemini_service.send_chat_message(
         resume_json=parsed_data,
         message=request.message,
-        history=request.history,
+        history=request.history, 
     )
 
     return {"reply": reply}
