@@ -1,111 +1,69 @@
-'use client'; 
-
-import { useState, useRef } from 'react';
+import Image from "next/image";
 
 export default function Home() {
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  
-  const handleButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      setUploadStatus('❌ Please upload a PDF file.');
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadStatus('Uploading and analyzing...');
-
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await fetch('http://localhost:8000/resume/upload?user_id=1', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
-      console.log("Success from FastAPI:", data);
-      
-      setUploadStatus('✅ Resume uploaded and parsed successfully!');
-      
-      
-    } catch (error) {
-      console.error(error);
-      setUploadStatus('❌ Error uploading resume. Is FastAPI running?');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="max-w-3xl w-full text-center space-y-8">
-        
-        <div className="space-y-4">
-          <h1 className="text-5xl font-extrabold text-gray-900 tracking-tight">
-            Career<span className="text-blue-600">Compass</span> AI
+    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <Image
+          className="dark:invert h-5 w-[100px]"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={100}
+          height={20}
+          priority
+        />
+        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            To get started, edit the{" "}
+            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
+              page.tsx
+            </code>{" "}
+            file.
           </h1>
-          <p className="text-xl text-gray-600">
-            Upload your resume to get instant ATS scoring, personalized roadmaps, and AI career coaching.
+          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            Looking for a starting point or more instructions? Head over to{" "}
+            <a
+              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Templates
+            </a>{" "}
+            or the{" "}
+            <a
+              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Learning
+            </a>{" "}
+            center.
           </p>
         </div>
-
-        <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center space-y-6">
-          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-blue-500" fill="none" strokeWidth="2" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"></path>
-            </svg>
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900">Upload your Resume (PDF)</h3>
-            <p className="text-gray-500 text-sm">Select your resume to begin analysis</p>
-          </div>
-
-          {/* Hidden file input */}
-          <input 
-            type="file" 
-            accept=".pdf" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            className="hidden" 
-          />
-
-          <button 
-            onClick={handleButtonClick}
-            disabled={isUploading}
-            className={`font-medium py-3 px-8 rounded-full transition-all text-white ${
-              isUploading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <a
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            {isUploading ? 'Analyzing...' : 'Select PDF File'}
-          </button>
-
-          {/* Status Message */}
-          {uploadStatus && (
-            <p className={`text-sm font-medium ${uploadStatus.includes('✅') ? 'text-green-600' : uploadStatus.includes('❌') ? 'text-red-600' : 'text-blue-600'}`}>
-              {uploadStatus}
-            </p>
-          )}
-
+            <Image
+              className="dark:invert h-[14px] w-4"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={16}
+              height={14}
+            />
+            Deploy Now
+          </a>
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Documentation
+          </a>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
