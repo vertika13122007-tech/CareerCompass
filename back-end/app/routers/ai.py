@@ -39,7 +39,7 @@ class OptimizeBulletRequest(BaseModel):
 
 class RoadmapRequest(BaseModel):
     target_role: str
-    timeframe: str = "6 months"
+    timeframe: str
 
 
 router = APIRouter(prefix="/ai", tags=["AI Engine"])
@@ -233,13 +233,12 @@ def optimize_bullet(request: OptimizeBulletRequest):
 @router.post("/roadmap")
 def roadmap(
     request: RoadmapRequest,
-    logged_in_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Generates a structured learning roadmap for an authenticated user based on their resume and target role.
+    Generates a structured learning roadmap based on the newest resume and target role.
     """
-    resume = db.query(Resume).filter(Resume.user_id == logged_in_user.id).first()
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
     if not resume:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

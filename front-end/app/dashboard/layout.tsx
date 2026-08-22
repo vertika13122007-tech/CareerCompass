@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen w-full bg-[#FDFBF7] text-[#2D3A2F] font-sans overflow-hidden">
-      <aside className="w-72 bg-white shadow-[4px_0_24px_rgba(214,211,204,0.3)] flex flex-col z-10">
+      <aside className="w-72 bg-[#EAF0EB] flex flex-col z-10">
         <div className="p-8 pb-10">
           <h1 className="text-2xl font-extrabold tracking-tight">
             <span className="text-[#2D3A2F]">Career</span>
@@ -34,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={link.name} 
                 href={link.href} 
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium ${
-                  active ? 'bg-[#EAF0EB] text-[#3B5942]' : 'text-[#5C665D] hover:bg-[#F5F3EC] hover:text-[#2D3A2F]'
+                  active ? 'bg-white shadow-sm text-[#2D3A2F]' : 'text-[#5C665D] hover:bg-[#DCE5DE]'
                 }`}
               >
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />
