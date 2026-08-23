@@ -1,9 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { CheckCircle2, MessageSquare, Map, Sparkles, Lightbulb, ArrowRight } from "lucide-react";
+import { CheckCircle2, MessageSquare, Map, Sparkles, Lightbulb, ArrowRight, FileText, Wand2 } from "lucide-react";
 
 export default function DashboardOverviewPage() {
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/ai/history");
+        if (res.ok) {
+          const data = await res.json();
+          const items = Array.isArray(data) ? data : data.history || [];
+          setHistory(items.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Failed to fetch document history:", err);
+      }
+    };
+    fetchHistory();
+  }, []);
+
   return (
     <div className="min-h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 bg-transparent">
       {/* Header */}
@@ -118,6 +137,67 @@ export default function DashboardOverviewPage() {
           <span className="font-bold text-[#EAF0EB]">Kiki&apos;s Tip of the Day:</span>{" "}
           Tailoring your resume for each application increases your ATS match rate by up to 40%.
         </p>
+      </div>
+
+      {/* Recent Documents Section */}
+      <div className="mt-10">
+        <h3 className="text-2xl font-bold text-[#2D3A2F] mb-6">Recent Documents</h3>
+
+        {history.length === 0 ? (
+          <p className="text-[#5C665D] italic p-6 bg-[#F9FAFB] rounded-2xl border border-[#F5F3EC]">
+            No documents saved yet. Generate a cover letter or tailor your resume to see them here!
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {history.map((doc: any, idx: number) => {
+              const isCoverLetter = doc.document_type?.toLowerCase().includes("cover");
+              const formattedDate = doc.created_at
+                ? new Date(doc.created_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Recent";
+
+              return (
+                <div
+                  key={doc.id || idx}
+                  className="bg-white border-2 border-[#EAF0EB] rounded-2xl p-5 flex justify-between items-center hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-[#EAF0EB] text-[#52795C] rounded-xl flex-shrink-0">
+                      {isCoverLetter ? (
+                        <FileText className="w-5 h-5" />
+                      ) : (
+                        <Wand2 className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[#2D3A2F] text-base">
+                        {doc.document_type || "Document"}{" "}
+                        <span className="text-xs font-normal text-[#5C665D] ml-2">
+                          ({doc.job_title || "Untitled Role"})
+                        </span>
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-0.5">{formattedDate}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log("Document data loaded:", doc);
+                      alert(`Document data loaded!\nType: ${doc.document_type}\nJob: ${doc.job_title}`);
+                    }}
+                    className="bg-[#F5F3EC] text-[#52795C] px-5 py-2 rounded-xl font-bold text-sm hover:bg-[#EAF0EB] transition-colors cursor-pointer"
+                  >
+                    View
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import { Wand2, Loader2, X, Check, CheckCircle2, Download, RotateCcw, Sparkles } from "lucide-react";
 
 interface Suggestion {
@@ -17,13 +18,50 @@ interface Suggestion {
 export default function TailorPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [queue, setQueue] = useState<Suggestion[]>([]);
+  const [queue, setQueue] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [acceptedChanges, setAcceptedChanges] = useState<Suggestion[]>([]);
+  const [acceptedChanges, setAcceptedChanges] = useState<any[]>([]);
   const [isFinished, setIsFinished] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fullResume, setFullResume] = useState<any>(null);
 
-  const handleTailor = async () => {
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleDownload = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "My_Tailored_ATS_Resume",
+  });
+
+  useEffect(() => {
+    const fetchResume = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/ai/current-resume");
+        if (res.ok) {
+          const data = await res.json();
+          setFullResume(data.resume);
+        }
+      } catch (err) {
+        console.error("Failed to fetch full resume:", err);
+      }
+    };
+    fetchResume();
+  }, []);
+
+  useEffect(() => {
+    if (isFinished && acceptedChanges.length > 0) {
+      fetch("http://127.0.0.1:8000/ai/save-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          document_type: "Tailored Resume",
+          job_title: "Resume Updates",
+          content: JSON.stringify(acceptedChanges)
+        })
+      }).catch(err => console.error("Failed to save:", err));
+    }
+  }, [isFinished, acceptedChanges]);
+
+  const handleAnalyze = async () => {
     if (!jobDescription.trim()) return;
 
     setIsLoading(true);
@@ -37,24 +75,22 @@ export default function TailorPage() {
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`API Error ${response.status}: ${errText}`);
+        throw new Error("Failed to tailor resume");
       }
 
       const data = await response.json();
-      const suggestions = data.suggestions || [];
-      
-      if (suggestions.length === 0) {
+      const suggestionsArray = data.suggestions || [];
+      if (suggestionsArray.length === 0) {
         setErrorMessage("No specific bullet points needed rewriting, or couldn't parse resume.");
       } else {
-        setQueue(suggestions);
-        setTotalCount(suggestions.length);
+        setQueue(suggestionsArray);
+        setTotalCount(suggestionsArray.length);
         setAcceptedChanges([]);
         setIsFinished(false);
       }
-    } catch (error: any) {
-      console.error("Failed to tailor resume:", error);
-      setErrorMessage(error.message || "Failed to tailor resume. Please try again.");
+    } catch (error) {
+      console.error("Error tailoring resume:", error);
+      alert("Failed to generate suggestions. Please check the backend console.");
     } finally {
       setIsLoading(false);
     }
@@ -86,31 +122,6 @@ export default function TailorPage() {
     setAcceptedChanges([]);
     setIsFinished(false);
     setErrorMessage(null);
-  };
-
-  const handleDownload = () => {
-    let content = "🚀 CAREERCOMPASS: YOUR TAILORED RESUME UPDATES\n";
-    content += "Copy and paste these optimized bullet points into your original resume document.\n\n";
-    
-    acceptedChanges.forEach((change: any, index: number) => {
-      const original = change.original_text || change.original || "";
-      const optimized = change.optimized_text || change.optimized || "";
-      content += `=========================================\n`;
-      content += `UPDATE ${index + 1} (Section: ${change.section || 'Experience'})\n`;
-      content += `=========================================\n`;
-      content += `❌ REPLACE THIS:\n${original}\n\n`;
-      content += `✅ WITH THIS:\n${optimized}\n\n\n`;
-    });
-
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "My_Tailored_Resume_Updates.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const currentItem = queue[0];
@@ -176,7 +187,7 @@ export default function TailorPage() {
               <div className="flex justify-end pt-2">
                 <button
                   type="button"
-                  onClick={handleTailor}
+                  onClick={handleAnalyze}
                   disabled={!jobDescription.trim() || isLoading}
                   className="bg-[#2D3A2F] text-white rounded-full px-8 py-4 font-bold hover:bg-[#3B5942] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 >
@@ -306,18 +317,26 @@ export default function TailorPage() {
               </p>
 
               {acceptedChanges.length > 0 && (
-                <div className="mt-6 w-full text-left bg-[#FDFBF7] p-4 rounded-2xl border border-[#F5F3EC]">
-                  <p className="text-xs font-bold text-[#796352] uppercase tracking-wider mb-2">
+                <div
+                  id="resume-summary-container"
+                  className="mt-6 w-full text-left bg-[#FDFBF7] p-6 rounded-2xl border border-[#F5F3EC]"
+                >
+                  <p className="text-xs font-bold text-[#796352] uppercase tracking-wider mb-3">
                     Accepted Improvements:
                   </p>
-                  <ul className="text-xs text-[#5C665D] space-y-1.5">
-                    {acceptedChanges.map((change, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-[#52795C] flex-shrink-0" />
-                        <span className="truncate">{change.section || "Experience bullet"}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4">
+                    {acceptedChanges.map((change, idx) => {
+                      const orig = change.original_text || change.original || "";
+                      const opt = change.optimized_text || change.optimized || "";
+                      return (
+                        <div key={idx} className="p-3.5 bg-white rounded-xl border border-[#F5F3EC] text-xs">
+                          <p className="font-bold text-[#2D3A2F] mb-1">{change.section || `Update ${idx + 1}`}</p>
+                          <p className="text-[#B74134] line-through mb-1.5 leading-relaxed">{orig}</p>
+                          <p className="text-[#52795C] font-semibold leading-relaxed">{opt}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -344,6 +363,135 @@ export default function TailorPage() {
           </div>
         )}
 
+      </div>
+
+      {/* Hidden Full ATS Resume PDF Template */}
+      <div className="hidden">
+        <div ref={printRef} className="bg-white text-black p-10 font-sans w-[8.5in] min-h-[11in] text-sm leading-relaxed">
+          {fullResume && (
+            <>
+              {/* Header */}
+              <h1 className="text-3xl font-bold text-center mb-2">
+                {fullResume.name || fullResume.personal_info?.name || fullResume.personal_info?.full_name || "Candidate Resume"}
+              </h1>
+              <p className="text-center mb-6 text-gray-600 text-xs">
+                {[
+                  fullResume.email || fullResume.personal_info?.email,
+                  fullResume.phone || fullResume.personal_info?.phone,
+                  fullResume.location || fullResume.personal_info?.location,
+                  fullResume.linkedin || fullResume.personal_info?.linkedin,
+                  fullResume.github || fullResume.personal_info?.github
+                ].filter(Boolean).join(" | ")}
+              </p>
+
+              {/* Summary */}
+              {(fullResume.summary || fullResume.professional_summary) && (
+                <div className="mb-6">
+                  <h2 className="text-base font-bold border-b border-black mb-2 uppercase tracking-wide">Professional Summary</h2>
+                  <p className="text-xs leading-relaxed">{fullResume.summary || fullResume.professional_summary}</p>
+                </div>
+              )}
+
+              {/* Experience Section (Only renders if it exists in the JSON) */}
+              {fullResume.experience && fullResume.experience.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-base font-bold border-b border-black mb-3 uppercase tracking-wide">Experience</h2>
+                  {fullResume.experience.map((job: any, idx: number) => {
+                    const jobTitle = job.title || job.role || "Role";
+                    const jobCompany = job.company || job.organization || "Company";
+                    const jobDates = job.dates || job.duration || "";
+                    const rawBullets = job.bullet_points || job.description || [];
+                    const safeBullets = Array.isArray(rawBullets) ? rawBullets : [rawBullets];
+
+                    return (
+                      <div key={idx} className="mb-4">
+                        <div className="flex justify-between font-bold text-xs">
+                          <span>{jobTitle} — {jobCompany}</span>
+                          <span>{jobDates}</span>
+                        </div>
+                        <ul className="list-disc pl-5 mt-1.5 space-y-1">
+                          {safeBullets.map((bullet: string, bIdx: number) => {
+                            const appliedChange = acceptedChanges.find((change: any) => 
+                              typeof bullet === 'string' && (bullet.includes(change.original_text || change.original) || (change.original_text || change.original)?.includes(bullet))
+                            );
+                            return (
+                              <li key={bIdx} className="text-xs leading-relaxed mb-1">
+                                {appliedChange ? (appliedChange.optimized_text || appliedChange.optimized) : bullet}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Projects Section (Maps user projects data) */}
+              {fullResume.projects && fullResume.projects.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-base font-bold border-b border-black mb-3 uppercase tracking-wide">Projects</h2>
+                  {fullResume.projects.map((proj: any, idx: number) => {
+                    const safeBullets = Array.isArray(proj.description) 
+                      ? proj.description 
+                      : (typeof proj.description === 'string' ? [proj.description] : (proj.bullet_points || proj.bullets || []));
+                    
+                    return (
+                      <div key={idx} className="mb-4">
+                        <div className="font-bold text-xs">{proj.title || proj.name || "Project"}</div>
+                        <ul className="list-disc pl-5 mt-1 space-y-1">
+                          {safeBullets.map((bullet: string, bIdx: number) => {
+                            // MAGIC SWAP for Projects!
+                            const appliedChange = acceptedChanges.find((change: any) => 
+                              typeof bullet === 'string' && (bullet.includes(change.original_text || change.original) || (change.original_text || change.original)?.includes(bullet))
+                            );
+                            return (
+                              <li key={bIdx} className="text-xs leading-relaxed mb-1">
+                                {appliedChange ? (appliedChange.optimized_text || appliedChange.optimized) : bullet}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Skills Section */}
+              {(fullResume.skills || fullResume.technical_skills) && (
+                <div className="mb-6">
+                  <h2 className="text-base font-bold border-b border-black mb-2 uppercase tracking-wide">Technical Skills</h2>
+                  <p className="text-xs leading-relaxed">
+                    {Array.isArray(fullResume.skills)
+                      ? fullResume.skills.join(", ")
+                      : typeof fullResume.skills === "object"
+                      ? Object.entries(fullResume.skills)
+                          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+                          .join(" | ")
+                      : String(fullResume.skills || fullResume.technical_skills)}
+                  </p>
+                </div>
+              )}
+
+              {/* Education Section */}
+              {fullResume.education && (
+                <div className="mb-6">
+                  <h2 className="text-base font-bold border-b border-black mb-2 uppercase tracking-wide">Education</h2>
+                  {Array.isArray(fullResume.education) ? (
+                    fullResume.education.map((edu: any, idx: number) => (
+                      <p key={idx} className="text-xs mb-1">
+                        <strong>{edu.degree || edu.qualification || "Degree"}</strong>, {edu.school || edu.institution || "Institution"} {edu.year ? `(${edu.year})` : ""}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-xs">{String(fullResume.education)}</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

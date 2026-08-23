@@ -7,8 +7,15 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.User import User
 from app.models.Resume import Resume
+from app.models.DocumentHistory import DocumentHistory
 from app.services.ai.gemini_service import GeminiService
 from app.services.ai.local_ml import LocalMLService
+
+
+class SaveDocumentRequest(BaseModel):
+    document_type: str
+    job_title: str | None = "Untitled Role"
+    content: str | list | dict
 
 
 class MatchJobRequest(BaseModel):
@@ -122,6 +129,18 @@ def generate_cover_letter(
         job_title=request.job_title,
         tone=request.tone,
     )
+
+    try:
+        doc = DocumentHistory(
+            document_type="Cover Letter",
+            job_title=request.job_title or "Untitled Role",
+            content=cover_letter
+        )
+        db.add(doc)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to save cover letter to DocumentHistory: {e}")
+        db.rollback()
 
     return {"cover_letter": cover_letter}
 
@@ -283,4 +302,48 @@ def tailor_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
     gemini_service = GeminiService()
     result = gemini_service.tailor_resume(resume_data, request.job_description)
     return result
+
+
+@router.get("/current-resume")
+def get_current_resume(db: Session = Depends(get_db)):
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="No resume found")
+    
+    raw_data = resume.parsed_resume or resume.extracted_text
+    resume_data = json.loads(raw_data) if isinstance(raw_data, str) else (raw_data or {})
+    return {"resume": resume_data}
+
+
+@router.post("/save-document")
+def save_document(request: SaveDocumentRequest, db: Session = Depends(get_db)):
+    content_str = json.dumps(request.content) if isinstance(request.content, (dict, list)) else str(request.content)
+    doc = DocumentHistory(
+        document_type=request.document_type,
+        job_title=request.job_title or "Untitled Role",
+        content=content_str
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+    return {"message": "Document saved successfully", "id": doc.id}
+
+
+@router.get("/history")
+def get_history(db: Session = Depends(get_db)):
+    records = db.query(DocumentHistory).order_by(DocumentHistory.created_at.desc()).all()
+    results = []
+    for rec in records:
+        try:
+            parsed_content = json.loads(rec.content)
+        except Exception:
+            parsed_content = rec.content
+        results.append({
+            "id": rec.id,
+            "document_type": rec.document_type,
+            "job_title": rec.job_title,
+            "content": parsed_content,
+            "created_at": rec.created_at
+        })
+    return {"history": results}
 

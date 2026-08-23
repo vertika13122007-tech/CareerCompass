@@ -29,7 +29,19 @@ export default function CoverLetterPage() {
       }
 
       const data = await response.json();
-      setCoverLetter(data.cover_letter || data.letter || "");
+      const generatedLetter = data.cover_letter || data.letter || "";
+      setCoverLetter(generatedLetter);
+
+      // Silent background call to save generated document
+      fetch("http://127.0.0.1:8000/ai/save-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          document_type: "Cover Letter",
+          job_title: "Generated Cover Letter",
+          content: JSON.stringify({ text: generatedLetter })
+        })
+      }).catch(err => console.error("Failed to save:", err));
     } catch (error: any) {
       console.error("Failed to generate cover letter:", error);
       setErrorMessage(error.message || "Failed to generate cover letter. Please try again.");
