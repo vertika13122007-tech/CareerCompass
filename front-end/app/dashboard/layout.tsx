@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Upload, Map, MessageSquare, Sparkles, LogOut } from 'lucide-react';
+import { LayoutDashboard, Upload, Map, MessageSquare, Sparkles, FileText, Wand2, LogOut } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,6 +14,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Learning Roadmap', href: '/dashboard/roadmap', icon: Map },
     { name: 'AI Coach', href: '/dashboard/chat', icon: MessageSquare },
     { name: 'Optimizer', href: '/dashboard/optimizer', icon: Sparkles },
+    { name: 'Tailor Resume', href: '/dashboard/tailor', icon: Wand2 },
+    { name: 'Cover Letter', href: '/dashboard/cover-letter', icon: FileText },
   ];
 
   return (

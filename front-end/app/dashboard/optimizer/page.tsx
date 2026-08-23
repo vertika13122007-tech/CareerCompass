@@ -7,28 +7,35 @@ export default function OptimizerPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const dummyResults = {
-    score: 78,
-    missingKeywords: ["Docker", "Kubernetes", "CI/CD Pipeline", "GraphQL"],
-    improvements: [
-      "Quantify your backend performance improvements (e.g., 'Reduced latency by 40%').",
-      "Add more emphasis on microservices architecture to match the 'cloud-native' requirement.",
-      "Mention specific testing frameworks (pytest, Jest) to highlight testing practices."
-    ]
-  };
-
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!jobDescription.trim()) return;
     
+    setErrorMessage(null);
     setIsLoading(true);
     setResults(null);
 
-    // Simulate API delay
-    setTimeout(() => {
-      setResults(dummyResults);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/ai/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_description: jobDescription }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`API Error ${response.status}: ${errText}`);
+      }
+
+      const data = await response.json();
+      setResults(data);
+    } catch (error: any) {
+      console.error("Failed to analyze:", error);
+      setErrorMessage(error.message || "Failed to analyze resume");
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -82,6 +89,13 @@ export default function OptimizerPage() {
           </div>
         </div>
 
+        {/* Error State */}
+        {errorMessage && (
+          <div className="bg-[#FCEAE8] text-[#B74134] p-4 rounded-2xl border border-[#F9D6D3] animate-in fade-in duration-300">
+            {errorMessage}
+          </div>
+        )}
+
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-16 animate-in fade-in duration-500">
@@ -101,7 +115,9 @@ export default function OptimizerPage() {
               <div className="bg-white border border-[#F5F3EC] rounded-3xl p-8 shadow-sm flex flex-col items-center justify-center col-span-1">
                 <p className="text-sm font-bold text-[#5C665D] uppercase tracking-wider mb-2">Match Score</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-6xl font-extrabold text-[#2D3A2F]">{results.score}</span>
+                  <span className="text-6xl font-extrabold text-[#2D3A2F]">
+                    {results.match_score ?? results.score ?? 0}
+                  </span>
                   <span className="text-2xl font-bold text-[#5C665D]">%</span>
                 </div>
               </div>
@@ -113,7 +129,7 @@ export default function OptimizerPage() {
                   Consider adding these skills to your resume if you have experience with them:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {results.missingKeywords.map((keyword: string, index: number) => (
+                  {(results.missing_keywords || results.missingKeywords || []).map((keyword: string, index: number) => (
                     <span 
                       key={index}
                       className="bg-[#FCEAE8] text-[#B74134] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm"
@@ -130,7 +146,7 @@ export default function OptimizerPage() {
             <div className="bg-white border border-[#F5F3EC] rounded-3xl p-8 shadow-sm">
               <h3 className="text-lg font-bold text-[#2D3A2F] mb-6">Actionable Improvements</h3>
               <ul className="space-y-4">
-                {results.improvements.map((improvement: string, index: number) => (
+                {(results.improvements || []).map((improvement: string, index: number) => (
                   <li key={index} className="flex gap-4 items-start">
                     <div className="flex-shrink-0 mt-0.5">
                       <ArrowRight className="w-5 h-5 text-[#52795C]" />

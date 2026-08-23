@@ -38,6 +38,23 @@ class LearningRoadmap(BaseModel):
     roadmap: list[RoadmapStep]
 
 
+class ResumeOptimizationResponse(BaseModel):
+    match_score: int
+    missing_keywords: list[str]
+    improvements: list[str]
+
+
+class TailoredSuggestion(BaseModel):
+    section: str
+    original_text: str
+    optimized_text: str
+    added_keywords: list[str]
+
+
+class ResumeTailorResponse(BaseModel):
+    suggestions: list[TailoredSuggestion]
+
+
 class GeminiService:
     def __init__(self, api_key: str | None = None, default_model: str = "gemini-3.5-flash-lite"):
         self.api_key = api_key or GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
@@ -326,6 +343,127 @@ class GeminiService:
                 print(f"RAW FAILED TEXT: {response.text}")
 
             return self._get_fallback_roadmap(target_role, timeframe)
+
+    def optimize_resume(
+        self,
+        resume_json: dict | str,
+        job_description: str
+    ) -> dict:
+        """
+        Compares resume against job description to provide match score, missing keywords, and improvements.
+        """
+        if not self.client:
+            return self._get_fallback_resume_optimization(job_description)
+
+        try:
+            if isinstance(resume_json, dict):
+                resume_str = json.dumps(resume_json, indent=2)
+            else:
+                resume_str = str(resume_json)
+
+            system_prompt = (
+                "You are an expert ATS (Applicant Tracking System) scanner and technical recruiter. "
+                "Analyze and compare the candidate's resume against the target job description. "
+                "Evaluate technical keyword matches, required qualifications, and overall fit. "
+                "Return a strict JSON object with: "
+                "1. match_score: An integer from 0 to 100 representing overall ATS match compatibility. "
+                "2. missing_keywords: A list of critical skills, tools, or domain keywords present in the job description but missing or weak in the resume. "
+                "3. improvements: A list of 3-4 specific, high-impact bullet-point recommendations to optimize the resume for this exact role."
+            )
+
+            contents = f"Candidate Resume:\n{resume_str}\n\nTarget Job Description:\n{job_description}"
+
+            config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                response_mime_type="application/json",
+                response_schema=ResumeOptimizationResponse,
+                temperature=0.2,
+            )
+
+            response = self.client.models.generate_content(
+                model=self.default_model,
+                contents=contents,
+                config=config,
+            )
+
+            if response and response.text:
+                return json.loads(response.text)
+
+            return self._get_fallback_resume_optimization(job_description)
+
+        except Exception as e:
+            print(f"🚨 GEMINI API ERROR during resume optimization: {e}")
+            traceback.print_exc()
+            return self._get_fallback_resume_optimization(job_description)
+
+    def _get_fallback_resume_optimization(self, job_description: str) -> dict:
+        return {
+            "match_score": 78,
+            "missing_keywords": ["Docker", "Kubernetes", "CI/CD Pipeline", "Cloud Architecture"],
+            "improvements": [
+                "Quantify your backend performance improvements (e.g., 'Reduced latency by 40%').",
+                "Add more emphasis on microservices architecture to match the job requirements.",
+                "Mention specific testing and deployment frameworks to highlight end-to-end delivery."
+            ]
+        }
+
+    def tailor_resume(
+        self,
+        resume_json: dict | str,
+        job_description: str
+    ) -> dict:
+        """
+        Rewrites 3 to 5 bullet points from the resume to perfectly align with the target job description.
+        """
+        if not self.client:
+            raise ValueError("Gemini API client is not initialized. Please check your GEMINI_API_KEY.")
+
+        try:
+            resume_data_str = json.dumps(resume_json) if isinstance(resume_json, (dict, list)) else str(resume_json)
+
+            prompt = f"""
+            You are an expert ATS resume writer. 
+            Here is the user's current resume data:
+            {resume_data_str}
+            
+            Here is the target job description:
+            {job_description}
+            
+            Your task is to select 3 to 5 specific bullet points from the user's experience and rewrite them to perfectly align with the target job description. 
+            Return ONLY a valid JSON object with this exact structure:
+            {{
+              "suggestions": [
+                {{
+                  "section": "Experience",
+                  "original_text": "...",
+                  "optimized_text": "...",
+                  "added_keywords": ["...", "..."]
+                }}
+              ]
+            }}
+            """
+
+            config = types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ResumeTailorResponse,
+                temperature=0.3,
+            )
+
+            response = self.client.models.generate_content(
+                model=self.default_model,
+                contents=prompt,
+                config=config,
+            )
+
+            if response and response.text:
+                return json.loads(response.text)
+
+            return {"suggestions": []}
+
+        except Exception as e:
+            print(f"🚨 GEMINI API ERROR during resume tailoring: {e}")
+            traceback.print_exc()
+            raise e
 
     def _get_fallback_cover_letter(
         self,

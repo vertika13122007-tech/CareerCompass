@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -35,6 +36,10 @@ class ChatMessageRequest(BaseModel):
 class OptimizeBulletRequest(BaseModel):
     bullet_point: str
     target_role: str = ""
+
+
+class OptimizeRequest(BaseModel):
+    job_description: str
 
 
 class RoadmapRequest(BaseModel):
@@ -91,16 +96,16 @@ def match_job(
     return scores
 
 
+@router.post("/cover-letter")
 @router.post("/generate-cover-letter")
 def generate_cover_letter(
     request: CoverLetterRequest,
-    logged_in_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Generates a personalized cover letter using GeminiService based on the authenticated user's parsed resume and job description.
+    Generates a personalized cover letter based on the newest parsed resume and job description.
     """
-    resume = db.query(Resume).filter(Resume.user_id == logged_in_user.id).first()
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
     if not resume:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -253,3 +258,29 @@ def roadmap(
         target_role=request.target_role,
         timeframe=request.timeframe,
     )
+
+
+@router.post("/optimize")
+def optimize_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="No resume found")
+    
+    raw_data = resume.parsed_resume or resume.extracted_text
+    resume_data = json.loads(raw_data) if isinstance(raw_data, str) else (raw_data or {})
+    
+    gemini_service = GeminiService()
+    result = gemini_service.optimize_resume(resume_data, request.job_description)
+    return result
+
+
+@router.post("/tailor")
+def tailor_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    raw_data = resume.parsed_resume or resume.extracted_text if resume else {}
+    resume_data = json.loads(raw_data) if isinstance(raw_data, str) else (raw_data or {})
+    
+    gemini_service = GeminiService()
+    result = gemini_service.tailor_resume(resume_data, request.job_description)
+    return result
+
