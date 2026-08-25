@@ -9,6 +9,7 @@ export default function DashboardOverviewPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [fullResume, setFullResume] = useState<any>(null);
+  const [template, setTemplate] = useState<'classic' | 'modern' | 'faang'>('modern');
 
   const contentRef = useRef<HTMLDivElement>(null);
   const handleDownload = useReactToPrint({ contentRef, documentTitle: "Saved_Tailored_Resume" });
@@ -232,6 +233,37 @@ export default function DashboardOverviewPage() {
                 <p className="text-[#2D3A2F] mb-6">
                   Your tailored resume changes have been loaded successfully.
                 </p>
+
+                <div className="mb-6 w-full max-w-sm">
+                  <p className="text-sm font-bold text-[#5C665D] mb-2 text-left">Select Resume Style:</p>
+                  <div className="flex bg-[#F5F3EC] p-1 rounded-xl">
+                    <button
+                      onClick={() => setTemplate('classic')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                        template === 'classic' ? 'bg-white shadow-sm text-black' : 'text-[#5C665D]'
+                      }`}
+                    >
+                      Classic
+                    </button>
+                    <button
+                      onClick={() => setTemplate('modern')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                        template === 'modern' ? 'bg-white shadow-sm text-[#52795C]' : 'text-[#5C665D]'
+                      }`}
+                    >
+                      Modern
+                    </button>
+                    <button
+                      onClick={() => setTemplate('faang')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                        template === 'faang' ? 'bg-white shadow-sm text-gray-800' : 'text-[#5C665D]'
+                      }`}
+                    >
+                      FAANG
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   onClick={handleDownload}
                   className="bg-[#52795C] text-white px-8 py-4 rounded-full font-bold hover:bg-[#3b5943] transition-all cursor-pointer"
@@ -248,18 +280,42 @@ export default function DashboardOverviewPage() {
       <div className="hidden">
         <div
           ref={contentRef}
-          className="bg-white text-black p-10 font-sans w-full max-w-[8.5in] min-h-[11in] text-sm leading-relaxed"
+          className={`bg-white p-10 w-full max-w-[8.5in] min-h-[11in] leading-relaxed ${
+            template === 'classic'
+              ? 'font-serif text-black text-sm'
+              : template === 'modern'
+              ? 'font-sans text-[#2D3A2F] text-sm'
+              : 'font-mono text-gray-900 text-xs tracking-tight'
+          }`}
         >
           {fullResume && selectedDoc && selectedDoc.document_type === "Tailored Resume" && (
             <>
-              <h1 className="text-3xl font-bold text-center mb-2">{fullResume.name || "Your Name"}</h1>
+              <h1
+                className={`text-center mb-2 ${
+                  template === 'classic'
+                    ? 'text-3xl font-bold uppercase'
+                    : template === 'modern'
+                    ? 'text-4xl font-extrabold text-[#52795C]'
+                    : 'text-2xl font-bold'
+                }`}
+              >
+                {fullResume.name || "Your Name"}
+              </h1>
               <p className="text-center mb-6 text-gray-600">
                 {fullResume.email} | {fullResume.phone} | {fullResume.location}
               </p>
 
               {fullResume.experience && fullResume.experience.length > 0 && (
                 <>
-                  <h2 className="text-lg font-bold border-b-2 border-black mt-4 mb-3 uppercase">
+                  <h2
+                    className={`font-bold mt-4 mb-3 ${
+                      template === 'classic'
+                        ? 'text-lg border-b-2 border-black uppercase'
+                        : template === 'modern'
+                        ? 'text-xl border-b-2 border-[#EAF0EB] text-[#52795C]'
+                        : 'text-md border-b border-gray-400 uppercase tracking-widest'
+                    }`}
+                  >
                     Experience
                   </h2>
                   {fullResume.experience.map((job: any, idx: number) => {
@@ -300,7 +356,15 @@ export default function DashboardOverviewPage() {
 
               {fullResume.projects && fullResume.projects.length > 0 && (
                 <>
-                  <h2 className="text-lg font-bold border-b-2 border-black mt-4 mb-3 uppercase">
+                  <h2
+                    className={`font-bold mt-4 mb-3 ${
+                      template === 'classic'
+                        ? 'text-lg border-b-2 border-black uppercase'
+                        : template === 'modern'
+                        ? 'text-xl border-b-2 border-[#EAF0EB] text-[#52795C]'
+                        : 'text-md border-b border-gray-400 uppercase tracking-widest'
+                    }`}
+                  >
                     Projects
                   </h2>
                   {fullResume.projects.map((proj: any, idx: number) => {
