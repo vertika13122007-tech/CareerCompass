@@ -50,6 +50,11 @@ class RenameChatSessionRequest(BaseModel):
     title: str
 
 
+class UpdateResumeRequest(BaseModel):
+    parsed_data: dict | list | str | None = None
+    resume: dict | list | str | None = None
+
+
 class OptimizeBulletRequest(BaseModel):
     bullet_point: str
     target_role: str = ""
@@ -432,6 +437,29 @@ def get_current_resume(db: Session = Depends(get_db)):
     raw_data = resume.parsed_resume or resume.extracted_text
     resume_data = json.loads(raw_data) if isinstance(raw_data, str) else (raw_data or {})
     return {"resume": resume_data}
+
+
+@router.patch("/current-resume")
+def update_current_resume(
+    request: UpdateResumeRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Updates the current parsed resume data in the database.
+    """
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="No resume found to update")
+
+    data = request.parsed_data if request.parsed_data is not None else request.resume
+    if data is None:
+        raise HTTPException(status_code=400, detail="Missing parsed_data or resume in request body")
+
+    resume.parsed_resume = data
+    db.commit()
+    db.refresh(resume)
+
+    return {"message": "Resume updated successfully", "resume": resume.parsed_resume}
 
 
 @router.post("/save-document")
