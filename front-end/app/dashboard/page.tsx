@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useReactToPrint } from "react-to-print";
 import { CheckCircle2, MessageSquare, Map, Sparkles, Lightbulb, ArrowRight, FileText, Wand2 } from "lucide-react";
 
 export default function DashboardOverviewPage() {
   const [history, setHistory] = useState<any[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [fullResume, setFullResume] = useState<any>(null);
+
+  const contentRef = useRef<HTMLDivElement>(null);
+  const handleDownload = useReactToPrint({ contentRef, documentTitle: "Saved_Tailored_Resume" });
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -21,6 +27,11 @@ export default function DashboardOverviewPage() {
       }
     };
     fetchHistory();
+
+    fetch("http://127.0.0.1:8000/ai/current-resume")
+      .then((res) => res.json())
+      .then((data) => setFullResume(data.resume))
+      .catch(console.error);
   }, []);
 
   return (
@@ -185,10 +196,7 @@ export default function DashboardOverviewPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      console.log("Document data loaded:", doc);
-                      alert(`Document data loaded!\nType: ${doc.document_type}\nJob: ${doc.job_title}`);
-                    }}
+                    onClick={() => setSelectedDoc(doc)}
                     className="bg-[#F5F3EC] text-[#52795C] px-5 py-2 rounded-xl font-bold text-sm hover:bg-[#EAF0EB] transition-colors cursor-pointer"
                   >
                     View
@@ -198,6 +206,136 @@ export default function DashboardOverviewPage() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Visible Modal UI */}
+      {selectedDoc && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative">
+            <button
+              onClick={() => setSelectedDoc(null)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-black font-bold cursor-pointer"
+            >
+              ✕ Close
+            </button>
+            <h2 className="text-2xl font-bold text-[#2D3A2F] mb-2">{selectedDoc.job_title}</h2>
+            <p className="text-[#5C665D] mb-6">{selectedDoc.document_type}</p>
+
+            {selectedDoc.document_type === "Cover Letter" ? (
+              <div className="bg-[#F9FAFB] p-6 rounded-2xl text-[#2D3A2F] whitespace-pre-wrap leading-relaxed border border-[#EAF0EB]">
+                {typeof selectedDoc.content === "string"
+                  ? JSON.parse(selectedDoc.content || "{}").text
+                  : selectedDoc.content?.text}
+              </div>
+            ) : (
+              <div className="bg-[#F9FAFB] p-6 rounded-2xl border border-[#EAF0EB] flex flex-col items-center text-center">
+                <p className="text-[#2D3A2F] mb-6">
+                  Your tailored resume changes have been loaded successfully.
+                </p>
+                <button
+                  onClick={handleDownload}
+                  className="bg-[#52795C] text-white px-8 py-4 rounded-full font-bold hover:bg-[#3b5943] transition-all cursor-pointer"
+                >
+                  Download PDF Resume
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Hidden PDF Printable Template */}
+      <div className="hidden">
+        <div
+          ref={contentRef}
+          className="bg-white text-black p-10 font-sans w-full max-w-[8.5in] min-h-[11in] text-sm leading-relaxed"
+        >
+          {fullResume && selectedDoc && selectedDoc.document_type === "Tailored Resume" && (
+            <>
+              <h1 className="text-3xl font-bold text-center mb-2">{fullResume.name || "Your Name"}</h1>
+              <p className="text-center mb-6 text-gray-600">
+                {fullResume.email} | {fullResume.phone} | {fullResume.location}
+              </p>
+
+              {fullResume.experience && fullResume.experience.length > 0 && (
+                <>
+                  <h2 className="text-lg font-bold border-b-2 border-black mt-4 mb-3 uppercase">
+                    Experience
+                  </h2>
+                  {fullResume.experience.map((job: any, idx: number) => {
+                    const safeBullets = Array.isArray(job.bullet_points || job.description)
+                      ? job.bullet_points || job.description
+                      : [job.bullet_points || job.description];
+                    const acceptedChanges = typeof selectedDoc.content === "string"
+                      ? JSON.parse(selectedDoc.content || "[]")
+                      : (selectedDoc.content || []);
+                    return (
+                      <div key={idx} className="mb-4">
+                        <div className="flex justify-between font-bold">
+                          <span>
+                            {job.title || job.role} — {job.company || job.organization}
+                          </span>
+                          <span>{job.dates}</span>
+                        </div>
+                        <ul className="list-disc pl-5 mt-2">
+                          {safeBullets.map((bullet: string, bIdx: number) => {
+                            const appliedChange = acceptedChanges.find(
+                              (change: any) =>
+                                typeof bullet === "string" &&
+                                (bullet.includes(change.original_text) ||
+                                  change.original_text.includes(bullet))
+                            );
+                            return (
+                              <li key={bIdx} className="mb-1">
+                                {appliedChange ? appliedChange.optimized_text : bullet}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {fullResume.projects && fullResume.projects.length > 0 && (
+                <>
+                  <h2 className="text-lg font-bold border-b-2 border-black mt-4 mb-3 uppercase">
+                    Projects
+                  </h2>
+                  {fullResume.projects.map((proj: any, idx: number) => {
+                    const safeBullets = Array.isArray(proj.description)
+                      ? proj.description
+                      : [proj.description];
+                    const acceptedChanges = typeof selectedDoc.content === "string"
+                      ? JSON.parse(selectedDoc.content || "[]")
+                      : (selectedDoc.content || []);
+                    return (
+                      <div key={idx} className="mb-4">
+                        <div className="font-bold">{proj.title}</div>
+                        <ul className="list-disc pl-5 mt-1">
+                          {safeBullets.map((bullet: string, bIdx: number) => {
+                            const appliedChange = acceptedChanges.find(
+                              (change: any) =>
+                                typeof bullet === "string" &&
+                                (bullet.includes(change.original_text) ||
+                                  change.original_text.includes(bullet))
+                            );
+                            return (
+                              <li key={bIdx} className="mb-1">
+                                {appliedChange ? appliedChange.optimized_text : bullet}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
