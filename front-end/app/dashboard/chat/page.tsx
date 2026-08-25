@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Bot, User, Square, FileText, Loader2, Plus, Trash2, MessageSquare, Pencil, Download } from "lucide-react";
+import { Sparkles, Send, Bot, User, Square, FileText, Loader2, Plus, Trash2, MessageSquare, Pencil, Download, Mic } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 
@@ -29,6 +29,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -254,6 +255,36 @@ export default function ChatPage() {
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const startListening = () => {
+    // @ts-ignore - Handle vendor prefixes
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Sorry, your browser doesn't support voice input. Try Google Chrome!");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => prev + (prev ? " " : "") + transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -570,22 +601,36 @@ export default function ChatPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="relative w-full">
+          <form onSubmit={handleSubmit} className="relative w-full flex items-center">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Kiki anything about your career goals, interview prep, or resume..."
-              className="w-full bg-[#F9FAFB] border-2 border-[#EAF0EB] rounded-full pl-5 pr-14 py-3.5 focus:outline-none focus:border-[#52795C] focus:bg-white shadow-xs text-[#2D3A2F] placeholder-[#8C938D] transition-all text-sm"
+              placeholder={isListening ? "Listening... Speak now..." : "Ask Kiki anything about your career goals, interview prep, or resume..."}
+              className="w-full bg-[#F9FAFB] border-2 border-[#EAF0EB] rounded-full pl-5 pr-24 py-3.5 focus:outline-none focus:border-[#52795C] focus:bg-white shadow-xs text-[#2D3A2F] placeholder-[#8C938D] transition-all text-sm"
             />
-            <button
-              type="submit"
-              disabled={!input.trim() || isTyping}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#52795C] text-white p-2.5 rounded-full hover:bg-[#3B5942] transition-all hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center shadow-sm cursor-pointer disabled:cursor-not-allowed"
-              aria-label="Send message"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={startListening}
+                className={`p-2.5 rounded-full transition-all cursor-pointer flex items-center justify-center ${
+                  isListening
+                    ? "bg-red-100 text-red-600 animate-pulse shadow-xs"
+                    : "bg-[#F5F3EC] text-[#5C665D] hover:bg-[#EAF0EB] hover:text-[#52795C]"
+                }`}
+                title="Use Voice Input"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={!input.trim() || isTyping}
+                className="bg-[#52795C] text-white p-2.5 rounded-full hover:bg-[#3B5942] transition-all hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center shadow-sm cursor-pointer disabled:cursor-not-allowed"
+                aria-label="Send message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </form>
         </div>
       </section>
