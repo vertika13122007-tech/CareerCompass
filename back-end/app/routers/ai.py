@@ -8,6 +8,7 @@ from app.dependencies.auth import get_current_user
 from app.models.User import User
 from app.models.Resume import Resume
 from app.models.DocumentHistory import DocumentHistory
+from app.models.ChatSession import ChatSession
 from app.services.ai.gemini_service import GeminiService
 from app.services.ai.local_ml import LocalMLService
 
@@ -37,7 +38,16 @@ class SkillGapRequest(BaseModel):
 
 class ChatMessageRequest(BaseModel):
     message: str
+    session_id: int | None = None
     history: list[dict] = []  # e.g., [{"role": "user", "text": "hi"}, {"role": "model", "text": "hello"}]
+
+
+class CreateChatSessionRequest(BaseModel):
+    title: str | None = "New Chat"
+
+
+class RenameChatSessionRequest(BaseModel):
+    title: str
 
 
 class OptimizeBulletRequest(BaseModel):
@@ -203,43 +213,152 @@ def analyze_gap(
     }
 
 
+@router.get("/coach/sessions")
+@router.get("/sessions")
+def get_chat_sessions(db: Session = Depends(get_db)):
+    """
+    Returns all ChatSession records ordered by updated_at descending.
+    """
+    sessions = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).all()
+    return sessions
+
+
+@router.post("/coach/sessions")
+@router.post("/sessions")
+def create_chat_session(
+    request: CreateChatSessionRequest | None = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Creates a new ChatSession with a blank messages array and returns it.
+    """
+    title = request.title if request and request.title else "New Chat"
+    new_session = ChatSession(
+        title=title,
+        messages=[]
+    )
+    db.add(new_session)
+    db.commit()
+    db.refresh(new_session)
+    return new_session
+
+
+@router.delete("/coach/sessions/{session_id}")
+@router.delete("/sessions/{session_id}")
+def delete_chat_session(
+    session_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Deletes a specific chat session.
+    """
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat session not found"
+        )
+
+    db.delete(session)
+    db.commit()
+    return {"message": "Chat session deleted successfully", "id": session_id}
+
+
+@router.patch("/coach/sessions/{session_id}")
+@router.patch("/sessions/{session_id}")
+def rename_chat_session(
+    session_id: int,
+    request: RenameChatSessionRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Renames a specific chat session.
+    """
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat session not found"
+        )
+
+    session.title = request.title
+    db.commit()
+    db.refresh(session)
+    return {
+        "message": "Chat session renamed successfully",
+        "id": session.id,
+        "title": session.title,
+        "session": session
+    }
+
+
 @router.post("/chat")
-def chat(
+@router.post("/coach/chat")
+def chat_with_coach(
     request: ChatMessageRequest,
     db: Session = Depends(get_db)
 ):
     """
     Interactive Career Coach AI chatbot endpoint that maintains chat history and candidate resume context.
     """
-    
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
-    
-    if not resume:
-        print("🚨 DATABASE CHECK: NO RESUME FOUND AT ALL!")
-        parsed_data = {}
-    else:
-        print(f"✅ DATABASE CHECK: RESUME FOUND! (Resume ID: {resume.id})")
-        
-        raw_data = resume.parsed_resume or resume.extracted_text
-        
-        if isinstance(raw_data, str):
-            try:
-                parsed_data = json.loads(raw_data)
-            except Exception:
-                parsed_data = {"text": raw_data}
-        else:
-            parsed_data = raw_data or {}
-            
-        print(f"🧠 DATA PASSED TO KIKI: {str(parsed_data)[:150]}...") # Print the first 150 characters to terminal
+    session = None
+    history = request.history
 
+    if request.session_id is not None:
+        session = db.query(ChatSession).filter(ChatSession.id == request.session_id).first()
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Chat session with id {request.session_id} not found."
+            )
+        history = session.messages or []
+
+    # 1. Fetch the user's latest resume
+    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+
+    # 2. Extract context
+    user_context = "No resume data available yet."
+    if resume:
+        raw_data = resume.parsed_resume or resume.extracted_text
+        user_context = raw_data if isinstance(raw_data, str) else json.dumps(raw_data)
+
+    # 3. Create a powerful system instruction
+    system_instruction = f"""
+    You are Kiki, an expert career coach. 
+    Always tailor your advice based on the user's current background.
+    Here is their current resume data: {user_context}
+    """
+
+    # 4. Pass the system instruction and chat history to Gemini service
     gemini_service = GeminiService()
-    reply = gemini_service.send_chat_message(
-        resume_json=parsed_data,
+    response_text = gemini_service.get_chat_response(
         message=request.message,
-        history=request.history, 
+        history=history,
+        system_instruction=system_instruction
     )
 
-    return {"reply": reply}
+    if session:
+        # Append user message and model response to session messages
+        current_messages = list(session.messages or [])
+        current_messages.append({"role": "user", "text": request.message})
+        current_messages.append({"role": "model", "text": response_text})
+        session.messages = current_messages
+
+        # Update title snippet if still "New Chat"
+        if not session.title or session.title == "New Chat":
+            clean_msg = request.message.strip()
+            snippet = (clean_msg[:30] + "...") if len(clean_msg) > 30 else clean_msg
+            session.title = snippet or "New Chat"
+
+        db.commit()
+        db.refresh(session)
+
+    return {
+        "response": response_text,
+        "reply": response_text,
+        "session_id": session.id if session else None,
+        "session": session
+    }
 
 
 @router.post("/optimize-bullet")

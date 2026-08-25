@@ -7,6 +7,7 @@ from app.models.PasswordResetOTP import PasswordResetOTP
 from app.models.Profile import Profile
 from app.models.Resume import Resume
 from app.models.DocumentHistory import DocumentHistory
+from app.models.ChatSession import ChatSession
 from app.routers.auth import router as auth_router
 from app.routers.profile import router as profile_router
 from app.routers.resume import router as resume_router

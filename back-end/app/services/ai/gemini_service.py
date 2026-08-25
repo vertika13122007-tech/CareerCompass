@@ -202,6 +202,52 @@ class GeminiService:
         )
         return chat
 
+    def get_chat_response(
+        self,
+        message: str,
+        history: list[dict] = [],
+        system_instruction: str | None = None
+    ) -> str:
+        """
+        Sends a message to the AI Career Coach chat session using custom system instruction and history.
+        """
+        if not self.client:
+            return self._get_fallback_chat_reply(message, system_instruction or {})
+
+        try:
+            config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.7,
+            ) if system_instruction else types.GenerateContentConfig(temperature=0.7)
+
+            chat = self.client.chats.create(
+                model=self.default_model,
+                config=config
+            )
+
+            formatted_prompt = ""
+            if history:
+                formatted_prompt += "Previous Conversation History:\n"
+                for turn in history:
+                    role = turn.get("role") or turn.get("sender") or "User"
+                    text = turn.get("text") or turn.get("content") or turn.get("message") or ""
+                    if text:
+                        formatted_prompt += f"- {role.capitalize()}: {text}\n"
+                formatted_prompt += "\nCurrent User Message:\n"
+
+            formatted_prompt += message
+
+            response = chat.send_message(formatted_prompt)
+
+            if response and response.text:
+                return response.text.strip()
+
+            return self._get_fallback_chat_reply(message, system_instruction or {})
+
+        except Exception as e:
+            print(f"Gemini API error during career coach chat: {e}")
+            return self._get_fallback_chat_reply(message, system_instruction or {})
+
     def send_chat_message(
         self,
         resume_json: dict | str,
