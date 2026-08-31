@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from fastapi import HTTPException
@@ -48,6 +48,7 @@ def _get_user_for_request(user_id: int, authorization: Optional[str], db: Sessio
 @router.post("/upload")
 async def upload_resume(
     file: UploadFile = File(...),
+    resume_name: str = Form("Untitled Resume"),
     user_id: int = 1,
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
@@ -56,7 +57,8 @@ async def upload_resume(
     return upload_resume_service(
         file=file,
         logged_in_user=user,
-        db=db
+        db=db,
+        resume_name=resume_name
     )
 
 
@@ -119,3 +121,53 @@ def get_latest_resume(
     data["original_filename"] = resume.original_filename
     
     return data
+
+
+@router.get("/all")
+def get_all_resumes(
+    user_id: int = 1,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    user = _get_user_for_request(user_id, authorization, db)
+    resumes = (
+        db.query(Resume)
+        .filter(Resume.user_id == user.id)
+        .order_by(Resume.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "resume_name": r.resume_name,
+            "is_active": r.is_active,
+            "created_at": r.created_at,
+        }
+        for r in resumes
+    ]
+
+
+@router.patch("/{resume_id}/activate")
+def activate_resume(
+    resume_id: int,
+    user_id: int = 1,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    user = _get_user_for_request(user_id, authorization, db)
+    
+    # Set is_active = False for ALL resumes belonging to the current user
+    db.query(Resume).filter(Resume.user_id == user.id).update({"is_active": False})
+    
+    # Query for the specific resume_id and set its is_active = True
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user.id).first()
+    if not resume:
+        resume = db.query(Resume).filter(Resume.id == resume_id).first()
+        if not resume:
+            raise HTTPException(status_code=404, detail="Resume not found")
+        resume.user_id = user.id
+
+    resume.is_active = True
+    db.commit()
+    
+    return {"message": "Resume activated"}

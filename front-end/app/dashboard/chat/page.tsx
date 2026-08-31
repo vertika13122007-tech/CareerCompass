@@ -20,6 +20,8 @@ interface ChatSession {
   updated_at: string;
 }
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 export default function ChatPage() {
   const [hasResume, setHasResume] = useState<boolean | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -47,7 +49,7 @@ export default function ChatPage() {
   useEffect(() => {
     const checkResume = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/resume/latest");
+        const response = await fetch(`${API_BASE_URL}/ai/current-resume`);
         if (response.ok) {
           setHasResume(true);
         } else {
@@ -65,7 +67,7 @@ export default function ChatPage() {
   // Fetch initial chat sessions
   const fetchSessions = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/ai/coach/sessions");
+      const res = await fetch(`${API_BASE_URL}/ai/coach/sessions`);
       if (res.ok) {
         const data: ChatSession[] = await res.json();
         setSessions(data);
@@ -114,7 +116,7 @@ export default function ChatPage() {
 
   const handleNewChat = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/ai/coach/sessions", {
+      const res = await fetch(`${API_BASE_URL}/ai/coach/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: "New Chat" }),
@@ -136,7 +138,7 @@ export default function ChatPage() {
       return;
     }
     try {
-      await fetch(`http://127.0.0.1:8000/ai/coach/sessions/${id}`, {
+      await fetch(`${API_BASE_URL}/ai/coach/sessions/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newTitle }),
@@ -154,7 +156,7 @@ export default function ChatPage() {
   const handleDeleteChat = async (e: React.MouseEvent, sessionId: number) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`http://127.0.0.1:8000/ai/coach/sessions/${sessionId}`, {
+      const res = await fetch(`${API_BASE_URL}/ai/coach/sessions/${sessionId}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -217,7 +219,7 @@ export default function ChatPage() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ai/chat", {
+      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,7 +241,7 @@ export default function ChatPage() {
       ]);
 
       // Refresh session list to show updated title and messages
-      const sessionsRes = await fetch("http://127.0.0.1:8000/ai/coach/sessions");
+      const sessionsRes = await fetch(`${API_BASE_URL}/ai/coach/sessions`);
       if (sessionsRes.ok) {
         const refreshedData: ChatSession[] = await sessionsRes.json();
         setSessions(refreshedData);

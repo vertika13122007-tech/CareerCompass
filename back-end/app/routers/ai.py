@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from app.models.DocumentHistory import DocumentHistory
 from app.models.ChatSession import ChatSession
 from app.services.ai.gemini_service import GeminiService
 from app.services.ai.local_ml import LocalMLService
+from app.services.resume_service import upload_resume_service
 
 
 class SaveDocumentRequest(BaseModel):
@@ -67,6 +68,10 @@ class OptimizeRequest(BaseModel):
 class RoadmapRequest(BaseModel):
     target_role: str
     timeframe: str
+
+
+class TargetRoleRequest(BaseModel):
+    target_role: str
 
 
 router = APIRouter(prefix="/ai", tags=["AI Engine"])
@@ -297,6 +302,44 @@ def rename_chat_session(
     }
 
 
+def _get_active_resume(db: Session) -> Resume | None:
+    return (
+        db.query(Resume)
+        .filter(Resume.is_active == True)
+        .order_by(Resume.id.desc())
+        .first()
+        or db.query(Resume)
+        .order_by(Resume.id.desc())
+        .first()
+    )
+
+
+@router.post("/upload")
+@router.post("/upload-resume")
+async def upload_resume_ai(
+    file: UploadFile = File(...),
+    resume_name: str = Form("Untitled Resume"),
+    db: Session = Depends(get_db)
+):
+    """
+    Uploads a new resume with a custom name, sets all other resumes to is_active=False,
+    and activates the newly uploaded resume.
+    """
+    user = db.query(User).first()
+    if not user:
+        user = User(name="Default User", email="user@example.com", hashed_password="hashed_password")
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return upload_resume_service(
+        file=file,
+        logged_in_user=user,
+        db=db,
+        resume_name=resume_name
+    )
+
+
 @router.post("/chat")
 @router.post("/coach/chat")
 def chat_with_coach(
@@ -318,8 +361,8 @@ def chat_with_coach(
             )
         history = session.messages or []
 
-    # 1. Fetch the user's latest resume
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    # 1. Fetch the user's active resume
+    resume = _get_active_resume(db)
 
     # 2. Extract context
     user_context = "No resume data available yet."
@@ -386,7 +429,7 @@ def roadmap(
     """
     Generates a structured learning roadmap based on the newest resume and target role.
     """
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    resume = _get_active_resume(db)
     if not resume:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -405,7 +448,7 @@ def roadmap(
 
 @router.post("/optimize")
 def optimize_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    resume = _get_active_resume(db)
     if not resume:
         raise HTTPException(status_code=404, detail="No resume found")
     
@@ -419,7 +462,7 @@ def optimize_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
 
 @router.post("/tailor")
 def tailor_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    resume = _get_active_resume(db)
     raw_data = resume.parsed_resume or resume.extracted_text if resume else {}
     resume_data = json.loads(raw_data) if isinstance(raw_data, str) else (raw_data or {})
     
@@ -430,13 +473,20 @@ def tailor_resume(request: OptimizeRequest, db: Session = Depends(get_db)):
 
 @router.get("/current-resume")
 def get_current_resume(db: Session = Depends(get_db)):
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    resume = db.query(Resume).filter(Resume.is_active == True).order_by(Resume.id.desc()).first()
+    if not resume:
+        resume = db.query(Resume).order_by(Resume.id.desc()).first()
     if not resume:
         raise HTTPException(status_code=404, detail="No resume found")
     
     raw_data = resume.parsed_resume or resume.extracted_text
     resume_data = json.loads(raw_data) if isinstance(raw_data, str) else (raw_data or {})
-    return {"resume": resume_data}
+    return {
+        "resume": resume_data,
+        "resume_name": resume.resume_name or "Untitled Resume",
+        "is_active": resume.is_active if resume.is_active is not None else True,
+        "id": resume.id
+    }
 
 
 @router.patch("/current-resume")
@@ -447,7 +497,9 @@ def update_current_resume(
     """
     Updates the current parsed resume data in the database.
     """
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    resume = db.query(Resume).filter(Resume.is_active == True).order_by(Resume.id.desc()).first()
+    if not resume:
+        resume = db.query(Resume).order_by(Resume.id.desc()).first()
     if not resume:
         raise HTTPException(status_code=404, detail="No resume found to update")
 
@@ -459,7 +511,12 @@ def update_current_resume(
     db.commit()
     db.refresh(resume)
 
-    return {"message": "Resume updated successfully", "resume": resume.parsed_resume}
+    return {
+        "message": "Resume updated successfully",
+        "resume": resume.parsed_resume,
+        "resume_name": resume.resume_name,
+        "is_active": resume.is_active
+    }
 
 
 @router.post("/save-document")
@@ -493,4 +550,62 @@ def get_history(db: Session = Depends(get_db)):
             "created_at": rec.created_at
         })
     return {"history": results}
+
+
+@router.get("/ats-score")
+def get_ats_score(
+    db: Session = Depends(get_db)
+):
+    """
+    Grades the currently active resume using Gemini AI based on ATS readability, impact, and formatting.
+    """
+    resume = (
+        db.query(Resume)
+        .filter(Resume.is_active == True)
+        .order_by(Resume.id.desc())
+        .first()
+    )
+    if not resume:
+        resume = db.query(Resume).order_by(Resume.id.desc()).first()
+
+    if not resume:
+        return {
+            "score": 0,
+            "status": "No active resume",
+            "feedback": ["Please upload and activate a resume."]
+        }
+
+    gemini_service = GeminiService()
+    resume_content = resume.parsed_resume or resume.extracted_text or {}
+    return gemini_service.grade_resume_ats(resume_content)
+
+
+@router.post("/target-match")
+def target_match(
+    request: TargetRoleRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Compares the active resume against a target role and returns matchScore and missingSkills.
+    """
+    resume = (
+        db.query(Resume)
+        .filter(Resume.is_active == True)
+        .order_by(Resume.id.desc())
+        .first()
+    )
+    if not resume:
+        resume = db.query(Resume).order_by(Resume.id.desc()).first()
+
+    if not resume:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active resume found. Please upload and activate a resume first."
+        )
+
+    gemini_service = GeminiService()
+    resume_content = resume.parsed_resume or resume.extracted_text or {}
+    return gemini_service.match_target_role(resume_content, request.target_role)
+
+
 

@@ -15,6 +15,8 @@ interface Suggestion {
   addedKeywords?: string[];
 }
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 export default function TailorPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +37,7 @@ export default function TailorPage() {
   useEffect(() => {
     const fetchResume = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/ai/current-resume");
+        const res = await fetch(`${API_BASE_URL}/ai/current-resume`);
         if (res.ok) {
           const data = await res.json();
           setFullResume(data.resume);
@@ -49,7 +51,7 @@ export default function TailorPage() {
 
   useEffect(() => {
     if (isFinished && acceptedChanges.length > 0) {
-      fetch("http://127.0.0.1:8000/ai/save-document", {
+      fetch(`${API_BASE_URL}/ai/save-document`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,7 +70,7 @@ export default function TailorPage() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ai/tailor", {
+      const response = await fetch(`${API_BASE_URL}/ai/tailor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_description: jobDescription }),

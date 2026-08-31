@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { UploadCloud, FileText, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
+
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 const loadingMessages = [
   "Uploading document... 📄",
@@ -19,8 +21,38 @@ export default function UploadPage() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isEditing, setIsEditing] = useState(false);
   const [parsedData, setParsedData] = useState<string>("");
+  const [resumes, setResumes] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const fetchResumes = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/resume/all`);
+      if (res.ok) {
+        const data = await res.json();
+        setResumes(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch resumes:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchResumes();
+  }, []);
+
+  const handleSetActive = async (id: number) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/resume/${id}/activate`, {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        await fetchResumes();
+      }
+    } catch (e) {
+      console.error("Failed to activate resume:", e);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -50,7 +82,10 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://127.0.0.1:8000/resume/upload", {
+      const targetUrl = `${API_BASE_URL}/resume/upload`;
+      console.log("🚀 Attempting to fetch:", targetUrl);
+
+      const response = await fetch(targetUrl, {
         method: "POST",
         body: formData,
       });
@@ -62,7 +97,7 @@ export default function UploadPage() {
         // If data only contains message, fetch from current-resume endpoint
         if (!data.parsed_resume && !data.resume && data.message) {
           try {
-            const currentRes = await fetch("http://127.0.0.1:8000/ai/current-resume");
+            const currentRes = await fetch(`${API_BASE_URL}/ai/current-resume`);
             if (currentRes.ok) {
               const currentData = await currentRes.json();
               extracted = currentData.resume || currentData;
@@ -75,6 +110,7 @@ export default function UploadPage() {
         setParsedData(JSON.stringify(extracted, null, 2));
         setIsEditing(true);
         setUploadStatus('success');
+        fetchResumes();
       } else {
         setUploadStatus('error');
       }
@@ -147,7 +183,7 @@ export default function UploadPage() {
               onClick={async () => {
                 try {
                   const jsonData = JSON.parse(parsedData);
-                  await fetch("http://127.0.0.1:8000/ai/current-resume", {
+                  await fetch(`${API_BASE_URL}/ai/current-resume`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ parsed_data: jsonData }),
@@ -270,6 +306,43 @@ export default function UploadPage() {
           )}
         </div>
       )}
+
+      {/* Resume Library Section */}
+      <div className="mt-12 w-full max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <h3 className="text-xl font-bold text-[#2D3A2F] mb-4">Your Resume Library</h3>
+        {resumes.length === 0 ? (
+          <div className="p-6 bg-white border-2 border-[#EAF0EB] rounded-2xl text-center text-[#5C665D]">
+            No resumes uploaded yet. Upload your first resume above!
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {resumes.slice(0, 5).map((resume: any) => (
+              <div key={resume.id} className="flex items-center justify-between p-5 bg-white border-2 border-[#EAF0EB] rounded-2xl shadow-sm hover:shadow-md transition-all">
+                <div>
+                  <h4 className="font-bold text-[#2D3A2F] text-lg">
+                    {resume.resume_name || "Untitled Resume"}
+                  </h4>
+                  <p className="text-xs text-[#5C665D] mt-1">
+                    Uploaded on {new Date(resume.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                {resume.is_active ? (
+                  <span className="px-4 py-2 bg-[#F5F3EC] text-[#52795C] text-sm font-bold rounded-xl border border-[#EAF0EB]">
+                    Active Default
+                  </span>
+                ) : (
+                  <button 
+                    onClick={() => handleSetActive(resume.id)}
+                    className="px-4 py-2 text-sm font-bold text-[#5C665D] hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                  >
+                    Set as Active
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

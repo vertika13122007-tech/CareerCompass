@@ -2,6 +2,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Boolean,
     DateTime,
     ForeignKey,
     Text,
@@ -21,9 +22,12 @@ class Resume(Base):
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
-        unique=True,
         nullable=False
     )
+
+    resume_name = Column(String(255), default="Untitled Resume")
+
+    is_active = Column(Boolean, default=True)
 
     original_filename = Column(String(255), nullable=False)
 
@@ -33,7 +37,7 @@ class Resume(Base):
 
     extracted_text = Column(Text, nullable=True)
 
-    parsed_resume = Column(JSONB,nullable=True)
+    parsed_resume = Column(JSONB, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

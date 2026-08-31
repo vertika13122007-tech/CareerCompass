@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Target, Map, BookOpen, Code, Database, BrainCircuit, Rocket, MapPin } from "lucide-react";
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 // Mock Data
 const dummyRoadmapData = [
   {
@@ -84,7 +86,7 @@ export default function RoadmapPage() {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ai/roadmap", {
+      const response = await fetch(`${API_BASE_URL}/ai/roadmap`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

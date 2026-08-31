@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { FileText, Loader2, Copy, Check, RotateCcw, Sparkles } from "lucide-react";
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 export default function CoverLetterPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +19,7 @@ export default function CoverLetterPage() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ai/cover-letter", {
+      const response = await fetch(`${API_BASE_URL}/ai/cover-letter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_description: jobDescription }),
@@ -33,7 +35,7 @@ export default function CoverLetterPage() {
       setCoverLetter(generatedLetter);
 
       // Silent background call to save generated document
-      fetch("http://127.0.0.1:8000/ai/save-document", {
+      fetch(`${API_BASE_URL}/ai/save-document`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

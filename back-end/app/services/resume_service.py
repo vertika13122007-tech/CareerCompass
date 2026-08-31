@@ -24,9 +24,17 @@ def _get_resume_by_user_id(
 ):
     resume = (
         db.query(Resume)
-        .filter(Resume.user_id == user_id)
+        .filter(Resume.user_id == user_id, Resume.is_active == True)
+        .order_by(Resume.id.desc())
         .first()
     )
+    if not resume:
+        resume = (
+            db.query(Resume)
+            .filter(Resume.user_id == user_id)
+            .order_by(Resume.id.desc())
+            .first()
+        )
     return resume
 
 def _create_resume(
@@ -36,10 +44,14 @@ def _create_resume(
     file_path:str,
     extracted_text:str | None,
     parsed_resume:dict,
+    resume_name:str,
+    is_active:bool,
     db:Session
 ):
     resume = Resume(
         user_id=user_id,
+        resume_name=resume_name,
+        is_active=is_active,
         original_filename=original_filename,
         stored_filename=stored_filename,
         file_path=file_path,
@@ -130,7 +142,8 @@ def _clean_resume_text(
 def upload_resume_service(
         file: UploadFile,
         logged_in_user: User,
-        db: Session
+        db: Session,
+        resume_name: str = "Untitled Resume"
 ):
     if file.content_type != "application/pdf" :
         raise HTTPException(
@@ -196,33 +209,20 @@ def upload_resume_service(
             detail="Failed to process uploaded resume."
         )
 
-    resume = _get_resume_by_user_id(logged_in_user.id,db)
+    # Deactivate any previous active resumes for this user
+    db.query(Resume).filter(Resume.user_id == logged_in_user.id).update({"is_active": False})
 
-    old_file_path = None
-
-    if resume:
-        old_file_path = resume.file_path
-
-    if resume is None:
-        resume = _create_resume(
-            user_id=logged_in_user.id,
-            original_filename=file.filename,
-            stored_filename=stored_filename,
-            file_path=file_path,
-            extracted_text=cleaned_text,
-            parsed_resume=safe_parsed_resume,
-            db=db
-        )
-
-    else:
-        resume = _update_resume(
-            original_filename=file.filename,
-            stored_filename=stored_filename,
-            file_path=file_path,
-            extracted_text=cleaned_text,
-            parsed_resume=safe_parsed_resume,
-            resume=resume
-        )
+    resume = _create_resume(
+        user_id=logged_in_user.id,
+        resume_name=resume_name or "Untitled Resume",
+        is_active=True,
+        original_filename=file.filename,
+        stored_filename=stored_filename,
+        file_path=file_path,
+        extracted_text=cleaned_text,
+        parsed_resume=safe_parsed_resume,
+        db=db
+    )
 
     try:
         db.commit()

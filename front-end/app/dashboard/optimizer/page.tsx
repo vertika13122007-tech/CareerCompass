@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Sparkles, Loader2, ArrowRight } from "lucide-react";
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 export default function OptimizerPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +19,7 @@ export default function OptimizerPage() {
     setResults(null);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ai/optimize", {
+      const response = await fetch(`${API_BASE_URL}/ai/optimize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_description: jobDescription }),
