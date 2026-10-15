@@ -32,11 +32,7 @@ export default function DashboardOverviewPage() {
     offers: 0
   });
 
-  const [activities, setActivities] = useState([
-    { id: 1, type: "score", text: "AI graded active resume: 45/100", time: "2 hours ago" },
-    { id: 2, type: "upload", text: "Uploaded Fake_BTech_CSE_Resume.pdf", time: "3 hours ago" },
-    { id: 3, type: "chat", text: "Completed Kiki mock interview", time: "1 day ago" },
-  ]);
+  const [activities, setActivities] = useState<any[]>([]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const handleDownload = useReactToPrint({ contentRef, documentTitle: "Saved_Tailored_Resume" });
@@ -108,6 +104,26 @@ export default function DashboardOverviewPage() {
     };
     fetchAtsScore();
     fetchTargetMatch("Frontend Developer");
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/jobs/stats`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.saved !== undefined) {
+          setJobStats(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch job stats:", err));
+
+    fetch(`${API_BASE_URL}/activity/recent`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setActivities(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch activity:", err));
   }, []);
 
   const getScoreColor = (score: number) => {
@@ -273,7 +289,12 @@ export default function DashboardOverviewPage() {
 
           {/* Job Application Tracker */}
           <div className="p-6 bg-white rounded-3xl border-2 border-[#EAF0EB] shadow-sm flex flex-col justify-between">
-            <h3 className="text-lg font-bold text-[#2D3A2F] mb-6">Pipeline Overview</h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-[#2D3A2F]">Pipeline Overview</h3>
+              <Link href="/dashboard/jobs" className="text-[#52795C] text-sm font-bold hover:underline">
+                View Board →
+              </Link>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { label: "Saved", count: jobStats.saved, color: "bg-gray-100 text-gray-700" },
@@ -365,19 +386,25 @@ export default function DashboardOverviewPage() {
             <h3 className="text-lg font-bold text-[#2D3A2F]">Recent Activity</h3>
             <span className="text-xs font-bold text-[#52795C] bg-[#F5F3EC] px-3 py-1 rounded-full">Live Feed</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {activities.map((activity) => (
-              <div key={activity.id} className="flex gap-4 p-4 bg-[#F9FAFB] rounded-2xl border border-gray-100 items-start">
-                <div className="w-9 h-9 rounded-full bg-[#F5F3EC] flex items-center justify-center shrink-0 border-2 border-white text-[#52795C] text-sm">
-                  {activity.type === 'score' ? '🎯' : activity.type === 'upload' ? '📄' : '💬'}
+          {activities.length === 0 ? (
+            <p className="text-sm text-[#5C665D] italic py-4">No recent activity recorded yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {activities.map((activity: any, idx: number) => (
+                <div key={activity.id || idx} className="flex gap-4 p-4 bg-[#F9FAFB] rounded-2xl border border-gray-100 items-start">
+                  <div className="w-9 h-9 rounded-full bg-[#F5F3EC] flex items-center justify-center shrink-0 border-2 border-white text-[#52795C] text-sm">
+                    {activity.type === 'score' ? '🎯' : activity.type === 'upload' ? '📄' : activity.type === 'chat' ? '💬' : '💼'}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[#2D3A2F] leading-snug">{activity.text}</p>
+                    <p className="text-xs text-[#5C665D] mt-1">
+                      {activity.created_at ? new Date(activity.created_at).toLocaleDateString() : "Recent"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-[#2D3A2F] leading-snug">{activity.text}</p>
-                  <p className="text-xs text-[#5C665D] mt-1">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           <button className="w-full mt-6 py-3 text-sm font-bold text-[#5C665D] hover:bg-gray-50 rounded-xl transition-all border-2 border-transparent hover:border-gray-100 cursor-pointer">
             View All Activity
           </button>

@@ -6,6 +6,8 @@ from app.models.PasswordResetOTP import PasswordResetOTP
 from app.models.Job_Preference import JobPreference
 from app.models.DocumentHistory import DocumentHistory
 from app.models.ChatSession import ChatSession
+from app.models.JobApplication import JobApplication
+from app.models.ActivityLog import ActivityLog
 
 __all__ = [
     "User",
@@ -16,4 +18,6 @@ __all__ = [
     "JobPreference",
     "DocumentHistory",
     "ChatSession",
+    "JobApplication",
+    "ActivityLog",
 ]

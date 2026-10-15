@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Upload, Map, MessageSquare, Sparkles, FileText, Wand2, LogOut } from 'lucide-react';
+import { LayoutDashboard, Upload, Map, MessageSquare, Sparkles, FileText, Wand2, LogOut, Briefcase } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,6 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Job Pipeline', href: '/dashboard/jobs', icon: Briefcase },
     { name: 'Upload Resume', href: '/dashboard/upload', icon: Upload },
     { name: 'Learning Roadmap', href: '/dashboard/roadmap', icon: Map },
     { name: 'AI Coach', href: '/dashboard/chat', icon: MessageSquare },
