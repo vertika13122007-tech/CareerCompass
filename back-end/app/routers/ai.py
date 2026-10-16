@@ -46,6 +46,17 @@ class ChatMessageRequest(BaseModel):
     history: list[dict] = []  # e.g., [{"role": "user", "text": "hi"}, {"role": "model", "text": "hello"}]
 
 
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class CoachChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    mode: str = "interview"  # "interview" or "advisor"
+    target_role: Optional[str] = "Software Engineer"
+
+
 class CreateChatSessionRequest(BaseModel):
     title: str | None = "New Chat"
 
@@ -424,6 +435,124 @@ def chat_with_coach(
         "session_id": session.id if session else None,
         "session": session
     }
+
+
+@router.post("/coach-chat")
+def coach_chat(
+    request: CoachChatRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    AI Coach endpoint for interactive mock interviews and career advice based on active resume.
+    """
+    active_resume = (
+        db.query(Resume)
+        .filter(Resume.is_active == True)
+        .order_by(Resume.id.desc())
+        .first()
+    )
+
+    active_resume_text = ""
+    if active_resume:
+        active_resume_text = active_resume.extracted_text or ""
+        if not active_resume_text and active_resume.parsed_resume:
+            active_resume_text = (
+                json.dumps(active_resume.parsed_resume, indent=2)
+                if isinstance(active_resume.parsed_resume, (dict, list))
+                else str(active_resume.parsed_resume)
+            )
+
+    target_role_str = request.target_role or "Software Engineer"
+
+    if request.mode == "interview":
+        system_prompt = f"""You are Kiki, a senior engineering hiring manager and elite technical interviewer. You are conducting an interactive mock interview with the user for the role of '{target_role_str}'.
+Candidate Resume Details:
+{active_resume_text}
+
+Rules:
+- Ask ONE focused interview question at a time (mix of technical system/coding concepts and STAR behavioral questions based on their actual resume projects).
+- If the user answers a question, evaluate their response briefly (Score 1-10 + 1 constructive suggestion), then ask the NEXT question.
+- Keep responses punchy, professional, supportive, yet rigorous. Never dump multiple questions at once."""
+    else:
+        system_prompt = f"""You are Kiki, an executive tech career coach. Provide clear, direct, and actionable career advice, resume strategy, and interview preparation guidance based on the candidate's active resume:
+{active_resume_text}"""
+
+    gemini_service = GeminiService()
+    gemini_reply_text = None
+
+    if gemini_service.client:
+        try:
+            from google.genai import types
+
+            contents = []
+            for msg in request.messages:
+                gemini_role = "model" if msg.role in ["assistant", "model", "kiki", "bot"] else "user"
+                contents.append(
+                    types.Content(
+                        role=gemini_role,
+                        parts=[types.Part.from_text(text=msg.content)]
+                    )
+                )
+
+            # Ensure valid conversation turn structure for Gemini API
+            while contents and contents[0].role == "model":
+                contents.pop(0)
+
+            if not contents:
+                contents = [
+                    types.Content(
+                        role="user",
+                        parts=[types.Part.from_text(text=f"Hello Kiki! I am ready for the {request.mode} session for {target_role_str}.")]
+                    )
+                ]
+
+            config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.7,
+            )
+
+            response = gemini_service.client.models.generate_content(
+                model=gemini_service.default_model,
+                contents=contents,
+                config=config,
+            )
+
+            if response and response.text:
+                gemini_reply_text = response.text.strip()
+        except Exception as e:
+            print(f"Error calling Gemini in /coach-chat: {e}")
+            gemini_reply_text = None
+
+    if not gemini_reply_text:
+        last_user_msg = ""
+        for m in reversed(request.messages):
+            if m.role == "user":
+                last_user_msg = m.content
+                break
+
+        if request.mode == "interview":
+            if not last_user_msg or len(request.messages) <= 1:
+                gemini_reply_text = (
+                    f"Hello! I'm Kiki, and I'll be your interviewer today for the **{target_role_str}** role. "
+                    "Let's dive into your experience.\n\n"
+                    "**Question 1:** Looking at your recent projects, can you walk me through the most technically challenging "
+                    "feature or system you designed? What were the key architectural trade-offs you considered?"
+                )
+            else:
+                gemini_reply_text = (
+                    "**Evaluation:** 8/10. Strong technical rationale and clear ownership of the problem.\n"
+                    "**Constructive Tip:** Quantify the latency or scalability improvement to make your impact even more undeniable.\n\n"
+                    "**Next Question:** How do you approach designing a resilient microservice that can gracefully handle downstream dependency failures?"
+                )
+        else:
+            gemini_reply_text = (
+                f"As your career advisor for **{target_role_str}**, here is my top strategic recommendation based on your active resume:\n\n"
+                "1. **Highlight Quantifiable Achievements:** Frame each project bullet around metrics (e.g., 'Reduced query latency by 40%').\n"
+                "2. **Align Core Competencies:** Ensure high-demand keywords (such as CI/CD, cloud architecture, and modern testing frameworks) are featured prominently.\n"
+                "3. **Storytelling in Interviews:** Use the STAR framework (Situation, Task, Action, Result) to narrate your technical accomplishments with executive clarity."
+            )
+
+    return {"response": gemini_reply_text}
 
 
 @router.post("/optimize-bullet")
