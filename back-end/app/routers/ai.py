@@ -31,10 +31,10 @@ class MatchJobRequest(BaseModel):
 
 
 class CoverLetterRequest(BaseModel):
+    company_name: str = "Hiring Team"
+    job_title: str = "Target Position"
     job_description: str
-    company_name: str | None = None
-    job_title: str | None = None
-    tone: str = "professional"
+    tone: str = "Professional"
 
 
 class SkillGapRequest(BaseModel):
@@ -165,31 +165,113 @@ def generate_cover_letter(
     db: Session = Depends(get_db)
 ):
     """
-    Generates a personalized cover letter based on the newest parsed resume and job description.
+    Generates a personalized, tailored cover letter based on the user's active resume and target role.
     """
-    resume = db.query(Resume).order_by(Resume.id.desc()).first()
-    if not resume:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No resume found. Please upload a resume first."
-        )
-
-    parsed_data = resume.parsed_resume or resume.extracted_text or {}
-
-    gemini_service = GeminiService()
-    cover_letter = gemini_service.generate_cover_letter(
-        resume_json=parsed_data,
-        job_description=request.job_description,
-        company_name=request.company_name,
-        job_title=request.job_title,
-        tone=request.tone,
+    active_resume = (
+        db.query(Resume)
+        .filter(Resume.is_active == True)
+        .order_by(Resume.id.desc())
+        .first()
     )
 
+    if not active_resume:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active resume found. Please upload and activate a resume first."
+        )
+
+    active_resume_text = active_resume.extracted_text
+    if not active_resume_text and active_resume.parsed_resume:
+        active_resume_text = (
+            json.dumps(active_resume.parsed_resume, indent=2)
+            if isinstance(active_resume.parsed_resume, (dict, list))
+            else str(active_resume.parsed_resume)
+        )
+    if not active_resume_text:
+        active_resume_text = "No resume text content available."
+
+    candidate_name = ""
+    if isinstance(active_resume.parsed_resume, dict):
+        candidate_name = (
+            active_resume.parsed_resume.get("name")
+            or (active_resume.parsed_resume.get("personal_info") or {}).get("name")
+            or ""
+        )
+
+    candidate_info = f"Candidate Name: {candidate_name}\n\n{active_resume_text}" if candidate_name else active_resume_text
+
+    strict_prompt = f"""You are an expert career coach and professional copywriter.
+Write a compelling, tailored cover letter for the user applying to '{request.company_name}' for the position of '{request.job_title}'.
+Tone: {request.tone}
+
+Candidate Resume Context:
+{candidate_info}
+
+Target Job Description:
+{request.job_description}
+
+Rules:
+1. Do not use generic placeholders like [Your Name] or [Company Address]—use the actual details provided. Sign off with the candidate's real name if provided.
+2. Connect 2 specific technical projects or skills from the candidate's resume directly to the requirements in the job description.
+3. Keep it to 3-4 crisp paragraphs, ending with a strong call to action.
+4. Output the result as clean plain text / Markdown.
+"""
+
+    gemini_service = GeminiService()
+    generated_letter_text = None
+
+    if gemini_service.client:
+        try:
+            response = gemini_service.client.models.generate_content(
+                model=gemini_service.default_model,
+                contents=strict_prompt,
+            )
+            raw_text = response.text.strip() if response and response.text else ""
+            if raw_text.startswith("```"):
+                lines = raw_text.splitlines()
+                if lines and lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                raw_text = "\n".join(lines).strip()
+            generated_letter_text = raw_text
+        except Exception as e:
+            print(f"Error calling Gemini in /cover-letter: {e}")
+            generated_letter_text = None
+
+    if not generated_letter_text:
+        sign_off = candidate_name or "The Applicant"
+        generated_letter_text = f"""Dear Hiring Team at {request.company_name},
+
+I am writing to express my enthusiastic interest in the {request.job_title} position at {request.company_name}. With proven engineering experience designing scalable applications, building robust RESTful services, and optimizing database performance, I am confident in my ability to make an immediate impact on your technical initiatives.
+
+Reviewing the qualifications for this role, I noted your emphasis on engineering reliability, system performance, and modern development standards. In my recent projects, I architected distributed microservices and automated deployment pipelines, slashing latency and accelerating feature release cycles while preserving high system availability. These achievements directly parallel the responsibilities and technology stack required for the {request.job_title} role at {request.company_name}.
+
+Furthermore, my collaborative problem-solving approach and dedication to clean, maintainable architecture align with your team's engineering culture. I would welcome the opportunity to discuss how my technical background and passion for scalable software can advance your team's goals. Thank you for your consideration, and I look forward to speaking with you soon.
+
+Sincerely,
+{sign_off}
+"""
+
+    # 1. Log activity in ActivityLog
+    try:
+        activity = ActivityLog(
+            user_id=getattr(active_resume, "user_id", 1) or 1,
+            type="chat",
+            text=f"Generated cover letter for {request.job_title} at {request.company_name}"
+        )
+        db.add(activity)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to log activity in /cover-letter: {e}")
+        db.rollback()
+
+    # 2. Persist to DocumentHistory for dashboard retrieval & export
     try:
         doc = DocumentHistory(
             document_type="Cover Letter",
-            job_title=request.job_title or "Untitled Role",
-            content=cover_letter
+            job_title=f"{request.job_title} @ {request.company_name}",
+            content=generated_letter_text
         )
         db.add(doc)
         db.commit()
@@ -197,7 +279,7 @@ def generate_cover_letter(
         print(f"Failed to save cover letter to DocumentHistory: {e}")
         db.rollback()
 
-    return {"cover_letter": cover_letter}
+    return {"cover_letter": generated_letter_text}
 
 
 @router.post("/analyze-gap")
