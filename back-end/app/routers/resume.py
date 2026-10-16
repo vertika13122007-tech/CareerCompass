@@ -142,6 +142,7 @@ def get_all_resumes(
             "resume_name": r.resume_name,
             "is_active": r.is_active,
             "created_at": r.created_at,
+            "extracted_text": r.extracted_text,
         }
         for r in resumes
     ]

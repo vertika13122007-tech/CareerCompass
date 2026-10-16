@@ -14,6 +14,17 @@ const loadingMessages = [
   "Finalizing candidate profile... ✨"
 ];
 
+const cleanResumeMarkdown = (text: string) => {
+  if (!text) return "";
+  return text
+    .replace(/#{1,6}\s*/g, "") // Remove headers like #, ##, ###
+    .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold **text** -> text
+    .replace(/\*(.*?)\*/g, "$1") // Remove italic *text* -> text
+    .replace(/---/g, "___________________") // Replace horizontal rules with clean lines
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1") // Convert markdown links [text](url) -> text
+    .replace(/^\s*\*\s+/gm, "• "); // Convert markdown bullets * to clean dots •
+};
+
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -22,6 +33,7 @@ export default function UploadPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [parsedData, setParsedData] = useState<string>("");
   const [resumes, setResumes] = useState<any[]>([]);
+  const [viewingResume, setViewingResume] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -326,23 +338,70 @@ export default function UploadPage() {
                     Uploaded on {new Date(resume.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                {resume.is_active ? (
-                  <span className="px-4 py-2 bg-[#F5F3EC] text-[#52795C] text-sm font-bold rounded-xl border border-[#EAF0EB]">
-                    Active Default
-                  </span>
-                ) : (
-                  <button 
-                    onClick={() => handleSetActive(resume.id)}
-                    className="px-4 py-2 text-sm font-bold text-[#5C665D] hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setViewingResume(resume)}
+                    className="px-4 py-2 text-sm font-bold text-[#52795C] bg-[#F5F3EC] hover:bg-[#ebe7d9] rounded-xl transition-all cursor-pointer"
                   >
-                    Set as Active
+                    View
                   </button>
-                )}
+                  {resume.is_active ? (
+                    <span className="px-4 py-2 bg-[#F5F3EC] text-[#52795C] text-sm font-bold rounded-xl border border-[#EAF0EB]">
+                      Active Default
+                    </span>
+                  ) : (
+                    <button 
+                      onClick={() => handleSetActive(resume.id)}
+                      className="px-4 py-2 text-sm font-bold text-[#5C665D] hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                    >
+                      Set as Active
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Resume Viewer Modal */}
+      {viewingResume && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col p-6 shadow-xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#EAF0EB]">
+              <div>
+                <h3 className="text-xl font-bold text-[#2D3A2F]">
+                  {viewingResume.resume_name || "Untitled Resume"}
+                </h3>
+                <p className="text-xs text-[#5C665D] mt-0.5">
+                  Uploaded on {new Date(viewingResume.created_at).toLocaleDateString()} {viewingResume.is_active && "• (Active Default)"}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingResume(null)}
+                className="text-gray-400 hover:text-[#2D3A2F] text-lg font-bold px-2 py-1 rounded-xl transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto bg-white p-6 rounded-2xl border border-gray-200 shadow-inner">
+              <div className="whitespace-pre-wrap text-sm text-[#2D3A2F] font-sans leading-relaxed">
+                {cleanResumeMarkdown(viewingResume.extracted_text) || "No text content available for this resume."}
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-4 pt-3 border-t border-[#EAF0EB]">
+              <button
+                onClick={() => setViewingResume(null)}
+                className="px-5 py-2.5 text-sm font-bold bg-[#52795C] text-white hover:bg-[#3b5943] rounded-xl shadow-sm transition-all cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

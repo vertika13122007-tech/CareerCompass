@@ -9,6 +9,7 @@ const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default function DashboardOverviewPage() {
   const [history, setHistory] = useState<any[]>([]);
+  const [recentResumes, setRecentResumes] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [fullResume, setFullResume] = useState<any>(null);
   const [template, setTemplate] = useState<'classic' | 'modern' | 'faang'>('modern');
@@ -83,10 +84,13 @@ export default function DashboardOverviewPage() {
     fetch(`${API_BASE_URL}/resume/all`)
       .then(res => res.json())
       .then(data => {
-        const active = data.find((r: any) => r.is_active);
-        if (active) setActiveResumeName(active.resume_name || "Untitled Resume");
+        if (Array.isArray(data)) {
+          setRecentResumes(data.slice(0, 3));
+          const active = data.find((r: any) => r.is_active);
+          if (active) setActiveResumeName(active.resume_name || "Untitled Resume");
+        }
       })
-      .catch(err => console.error("Failed to fetch resume name:", err));
+      .catch(err => console.error("Failed to fetch recent resumes:", err));
 
     const fetchAtsScore = async () => {
       try {
@@ -423,55 +427,66 @@ export default function DashboardOverviewPage() {
 
         {/* 6. Recent Documents Section */}
         <div className="mt-2">
-          <h3 className="text-2xl font-bold text-[#2D3A2F] mb-6">Recent Documents</h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-[#2D3A2F]">Recent Documents</h3>
+            <Link
+              href="/dashboard/upload"
+              className="text-xs font-bold text-[#52795C] hover:text-[#3B5942] hover:underline flex items-center gap-1"
+            >
+              Manage in Resume Library <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-          {history.length === 0 ? (
+          {recentResumes.length === 0 ? (
             <p className="text-[#5C665D] italic p-6 bg-[#F9FAFB] rounded-2xl border border-[#F5F3EC]">
-              No documents saved yet. Generate a cover letter or tailor your resume to see them here!
+              No resumes found in your library yet. Upload or tailor a resume to see it here!
             </p>
           ) : (
             <div className="space-y-4">
-              {history.map((doc: any, idx: number) => {
-                const isCoverLetter = doc.document_type?.toLowerCase().includes("cover");
-                const formattedDate = doc.created_at
-                  ? new Date(doc.created_at).toLocaleDateString(undefined, {
+              {recentResumes.map((resume: any, idx: number) => {
+                const formattedDate = resume.created_at
+                  ? new Date(resume.created_at).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })
-                  : "Recent";
+                  : "Recently added";
 
                 return (
                   <div
-                    key={doc.id || idx}
-                    className="bg-white border-2 border-[#EAF0EB] rounded-2xl p-5 flex justify-between items-center hover:shadow-sm transition-all"
+                    key={resume.id || idx}
+                    className="bg-white border-2 border-[#EAF0EB] rounded-2xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:shadow-sm transition-all"
                   >
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-[#EAF0EB] text-[#52795C] rounded-xl flex-shrink-0">
-                        {isCoverLetter ? (
-                          <FileText className="w-5 h-5" />
-                        ) : (
-                          <Wand2 className="w-5 h-5" />
-                        )}
+                        <FileText className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-[#2D3A2F] text-base">
-                          {doc.document_type || "Document"}{" "}
-                          <span className="text-xs font-normal text-[#5C665D] ml-2">
-                            ({doc.job_title || "Untitled Role"})
-                          </span>
-                        </h4>
-                        <p className="text-xs text-gray-500 mt-0.5">{formattedDate}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-[#2D3A2F] text-base">
+                            {resume.resume_name || "Untitled Resume"}
+                          </h4>
+                          {resume.is_active ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#EAF0EB] text-[#52795C] border border-[#DCE5DE]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#52795C] animate-pulse"></span>
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F5F3EC] text-[#5C665D] border border-[#E8E4DA]">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">Uploaded {formattedDate}</p>
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSelectedDoc(doc)}
-                      className="bg-[#F5F3EC] text-[#52795C] px-5 py-2 rounded-xl font-bold text-sm hover:bg-[#EAF0EB] transition-colors cursor-pointer"
+                    <Link
+                      href="/dashboard/upload"
+                      className="self-start sm:self-auto bg-[#F5F3EC] text-[#52795C] hover:bg-[#EAF0EB] px-5 py-2 rounded-xl font-bold text-sm transition-colors text-center"
                     >
-                      View
-                    </button>
+                      View in Library
+                    </Link>
                   </div>
                 );
               })}
