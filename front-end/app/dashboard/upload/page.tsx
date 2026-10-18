@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, FileText, CheckCircle, AlertCircle, Eye, Check } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle, AlertCircle, Eye, Check, Trash2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
@@ -68,6 +68,20 @@ export default function UploadPage() {
       }
     } catch (e) {
       console.error("Failed to activate resume:", e);
+    }
+  };
+
+  const handleDeleteResume = async (id: number) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/resume/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setResumes((prev) => prev.filter((r) => r.id !== id));
+        await fetchResumes();
+      }
+    } catch (e) {
+      console.error("Failed to delete resume:", e);
     }
   };
 
@@ -326,27 +340,35 @@ export default function UploadPage() {
                     Uploaded on {new Date(resume.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center">
                   <button
                     onClick={() => setViewingResume(resume)}
-                    className="px-4 py-2 text-sm font-bold text-[#52795C] bg-[#F5F3EC] hover:bg-[#ebe7d9] rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                    className="px-3.5 py-2 text-sm font-bold text-[#52795C] bg-[#F5F3EC] hover:bg-[#ebe7d9] rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
                   >
                     <Eye className="w-4 h-4" />
                     <span>View</span>
                   </button>
                   {resume.is_active ? (
-                    <span className="px-4 py-2 bg-[#52795C] text-white text-sm font-bold rounded-xl shadow-xs flex items-center gap-1">
+                    <span className="px-3.5 py-2 bg-[#52795C] text-white text-sm font-bold rounded-xl shadow-xs flex items-center gap-1">
                       <Check className="w-4 h-4 stroke-[3]" />
                       <span>Active Default</span>
                     </span>
                   ) : (
                     <button 
                       onClick={() => handleSetActive(resume.id)}
-                      className="px-4 py-2 text-sm font-bold text-[#5C665D] hover:bg-[#F5F3EC] hover:text-[#2D3A2F] rounded-xl transition-all cursor-pointer border border-[#EAF0EB]"
+                      className="px-3.5 py-2 text-sm font-bold text-[#5C665D] hover:bg-[#F5F3EC] hover:text-[#2D3A2F] rounded-xl transition-all cursor-pointer border border-[#EAF0EB]"
                     >
                       Set as Active
                     </button>
                   )}
+                  <button
+                    onClick={() => handleDeleteResume(resume.id)}
+                    className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 bg-rose-50 border border-rose-100 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center"
+                    title="Delete Resume"
+                    aria-label="Delete Resume"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}

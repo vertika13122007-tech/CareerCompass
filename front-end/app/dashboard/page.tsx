@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useReactToPrint } from "react-to-print";
 import { CheckCircle2, MessageSquare, Map, Sparkles, Lightbulb, ArrowRight, FileText, Wand2, Loader2 } from "lucide-react";
+import { InfiniteSlider } from "@/components/core/infinite-slider";
+import { ProgressiveBlur } from "@/components/core/progressive-blur";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -124,7 +126,8 @@ export default function DashboardOverviewPage() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setActivities(data);
+          // Cap the activity items to a maximum of 9 items (most recent)
+          setActivities(data.slice(0, 9));
         }
       })
       .catch(err => console.error("Failed to fetch activity:", err));
@@ -387,34 +390,50 @@ export default function DashboardOverviewPage() {
           </Link>
         </div>
 
-        {/* 4. Recent Activity (Horizontal Full-Width Card) */}
-        <div className="p-6 bg-white rounded-3xl border border-[#EAF0EB] shadow-sm w-full">
+        {/* 4. Recent Activity (Infinite Slider with Progressive Blur) */}
+        <div className="p-6 bg-white rounded-3xl border border-[#EAF0EB] shadow-sm w-full overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-[#2D3A2F]">Recent Activity</h3>
-            <span className="text-xs font-bold text-[#52795C] bg-[#F5F3EC] border border-[#EAF0EB] px-3 py-1 rounded-full">Live Feed</span>
+            <span className="text-xs font-bold text-[#52795C] bg-[#F5F3EC] border border-[#EAF0EB] px-3 py-1 rounded-full">
+              Live Feed
+            </span>
           </div>
           {activities.length === 0 ? (
             <p className="text-sm text-[#5C665D] italic py-4">No recent activity recorded yet.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {activities.map((activity: any, idx: number) => (
-                <div key={activity.id || idx} className="flex gap-4 p-4 bg-[#F9FAFB] rounded-2xl border border-gray-100 items-start">
-                  <div className="w-9 h-9 rounded-full bg-[#F5F3EC] flex items-center justify-center shrink-0 border-2 border-white text-[#52795C] text-sm">
-                    {activity.type === 'score' ? '🎯' : activity.type === 'upload' ? '📄' : activity.type === 'chat' ? '💬' : '💼'}
+            <div className="relative w-full overflow-hidden py-1">
+              {/* Progressive Blur Overlays */}
+              <ProgressiveBlur direction="left" size="4rem" />
+              <ProgressiveBlur direction="right" size="4rem" />
+
+              <InfiniteSlider
+                gap={20}
+                duration={35}
+                durationOnHover={60}
+                direction="horizontal"
+                className="w-full py-1"
+              >
+                {activities.slice(0, 9).map((activity: any, idx: number) => (
+                  <div
+                    key={activity.id || idx}
+                    className="flex items-center gap-3.5 px-4 py-3 bg-[#F9FAFB] rounded-2xl border border-gray-100 shadow-xs hover:border-[#D5E3D7] hover:bg-[#F5F3EC]/50 transition-all shrink-0 min-w-[260px] max-w-[340px]"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-[#F5F3EC] flex items-center justify-center shrink-0 border-2 border-white text-[#52795C] text-sm shadow-xs">
+                      {activity.type === 'score' ? '🎯' : activity.type === 'upload' ? '📄' : activity.type === 'chat' ? '💬' : '💼'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[#2D3A2F] truncate leading-tight">
+                        {activity.text}
+                      </p>
+                      <p className="text-[11px] text-[#5C665D] mt-0.5">
+                        {activity.created_at ? new Date(activity.created_at).toLocaleDateString() : "Recent"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-[#2D3A2F] leading-snug">{activity.text}</p>
-                    <p className="text-xs text-[#5C665D] mt-1">
-                      {activity.created_at ? new Date(activity.created_at).toLocaleDateString() : "Recent"}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </InfiniteSlider>
             </div>
           )}
-          <button className="w-full mt-6 py-3 text-sm font-bold text-[#5C665D] hover:bg-[#F5F3EC] rounded-xl transition-all border-2 border-transparent hover:border-gray-100 cursor-pointer">
-            View All Activity
-          </button>
         </div>
 
         {/* 5. Daily Tip Section */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -17,11 +17,13 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import { AppleStyleDock } from '@/components/core/apple-style-dock';
+import { ScrollProgress } from '@/components/core/scroll-progress';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -111,10 +113,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-20 transition-all">
-        <div className="max-w-5xl mx-auto">{children}</div>
-      </main>
+      {/* Main Content Area with ScrollProgress */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+        <ScrollProgress containerRef={containerRef} className="absolute top-0 left-0 right-0" />
+        <main ref={containerRef} className="flex-1 overflow-y-auto p-6 md:p-10 pb-20 transition-all">
+          <div className="max-w-5xl mx-auto">{children}</div>
+        </main>
+      </div>
 
       {/* Floating Apple-Style Dock: Only shown when mounted and sidebar is collapsed */}
       {mounted && !isSidebarOpen && <AppleStyleDock />}
