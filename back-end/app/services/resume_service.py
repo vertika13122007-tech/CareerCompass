@@ -209,12 +209,21 @@ def upload_resume_service(
             detail="Failed to process uploaded resume."
         )
 
+    # Determine clean resume name from local filename if default/missing
+    clean_resume_name = resume_name
+    if not clean_resume_name or clean_resume_name.strip() in ("", "Untitled Resume"):
+        if file.filename:
+            raw_base = file.filename.rsplit('.', 1)[0]
+            clean_resume_name = raw_base.replace('_', ' ').replace('-', ' ').strip()
+        if not clean_resume_name:
+            clean_resume_name = "Resume"
+
     # Deactivate any previous active resumes for this user
     db.query(Resume).filter(Resume.user_id == logged_in_user.id).update({"is_active": False})
 
     resume = _create_resume(
         user_id=logged_in_user.id,
-        resume_name=resume_name or "Untitled Resume",
+        resume_name=clean_resume_name,
         is_active=True,
         original_filename=file.filename,
         stored_filename=stored_filename,

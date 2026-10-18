@@ -116,7 +116,7 @@ export default function JobsPage() {
           return (
             <div
               key={columnStatus}
-              className="bg-white/80 rounded-3xl p-5 border-2 border-[#EAF0EB] shadow-xs flex flex-col min-h-[550px] transition-all"
+              className="bg-white/80 rounded-3xl p-4 border-2 border-[#EAF0EB] shadow-xs flex flex-col min-h-[550px] transition-all"
             >
               {/* Column Title Bar */}
               <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#EAF0EB] px-1">
@@ -135,7 +135,7 @@ export default function JobsPage() {
               </div>
 
               {/* Job Application Cards List */}
-              <div className="space-y-3.5 flex-1">
+              <div className="space-y-3 flex-1">
                 {isLoading ? (
                   <div className="space-y-3 py-2">
                     <div className="h-24 bg-[#F5F3EC]/70 rounded-2xl animate-pulse" />
@@ -150,7 +150,7 @@ export default function JobsPage() {
                   columnJobs.map((job: any) => (
                     <div
                       key={job.id}
-                      className="bg-white p-4.5 rounded-2xl border-2 border-[#EAF0EB] shadow-sm hover:shadow-md transition-all space-y-3 group"
+                      className="bg-white p-4 rounded-2xl border-2 border-[#EAF0EB] shadow-sm hover:shadow-md transition-all group overflow-hidden"
                     >
                       {/* Job Header & Delete Button */}
                       <div className="flex justify-between items-start gap-2">
@@ -173,15 +173,15 @@ export default function JobsPage() {
                       </div>
 
                       {/* Status Dropdown and Date */}
-                      <div className="pt-3 border-t border-[#EAF0EB]/80 flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-medium text-gray-400">
+                      <div className="mt-4 pt-3 border-t border-[#EAF0EB]/80 flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-medium text-gray-400 shrink-0">
                           {job.created_at ? new Date(job.created_at).toLocaleDateString() : 'Recent'}
                         </span>
 
                         <select
                           value={job.status}
                           onChange={(e) => handleStatusChange(job.id, e.target.value)}
-                          className="text-xs font-bold text-[#52795C] bg-[#F5F3EC] px-2.5 py-1.5 rounded-xl border border-[#EAF0EB] focus:outline-none focus:border-[#52795C] cursor-pointer"
+                          className="px-2 py-1 text-xs font-bold text-[#52795C] bg-[#F5F3EC] rounded-lg border border-[#EAF0EB] focus:outline-none focus:border-[#52795C] cursor-pointer"
                         >
                           {COLUMNS.map((col) => (
                             <option key={col} value={col}>

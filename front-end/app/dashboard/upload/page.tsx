@@ -138,6 +138,10 @@ export default function UploadPage() {
 
         setParsedData(JSON.stringify(extracted, null, 2));
         setUploadStatus('success');
+        setFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         await fetchResumes();
       } else {
         setUploadStatus('error');

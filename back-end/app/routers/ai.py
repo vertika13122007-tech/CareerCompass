@@ -1132,16 +1132,16 @@ def get_ats_score(
     """
     Grades the currently active resume using Gemini AI based on ATS readability, impact, and formatting.
     """
-    resume = (
+    active_resume = (
         db.query(Resume)
         .filter(Resume.is_active == True)
         .order_by(Resume.id.desc())
         .first()
     )
-    if not resume:
-        resume = db.query(Resume).order_by(Resume.id.desc()).first()
+    if not active_resume:
+        active_resume = db.query(Resume).order_by(Resume.id.desc()).first()
 
-    if not resume:
+    if not active_resume:
         return {
             "score": 0,
             "status": "No active resume",
@@ -1149,8 +1149,15 @@ def get_ats_score(
         }
 
     gemini_service = GeminiService()
-    resume_content = resume.parsed_resume or resume.extracted_text or {}
-    return gemini_service.grade_resume_ats(resume_content)
+    resume_content = active_resume.parsed_resume or active_resume.extracted_text or {}
+    ai_response = gemini_service.grade_resume_ats(resume_content)
+
+    score = int(ai_response.get("score", 0))
+    if score < 35 and active_resume and active_resume.extracted_text and len(active_resume.extracted_text) > 50:
+        score = 35
+    ai_response["score"] = score
+
+    return ai_response
 
 
 @router.post("/target-match")
