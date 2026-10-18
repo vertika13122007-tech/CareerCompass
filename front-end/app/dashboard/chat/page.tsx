@@ -13,6 +13,9 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
+import { TextEffect } from "@/components/core/text-effect";
+import { BorderTrail } from "@/components/core/border-trail";
+import { TextShimmer } from "@/components/core/text-shimmer";
 
 interface Message {
   role: "user" | "assistant";
@@ -319,7 +322,9 @@ export default function CoachChatPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-[#2D3A2F]">AI Coach Kiki</h1>
+              <TextEffect className="text-xl font-black text-[#2D3A2F]" preset="fade-in-blur" speedReveal={1.1} speedSegment={0.3}>
+                AI Coach Kiki
+              </TextEffect>
               <span
                 className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"
                 title="Online & Ready"
@@ -365,11 +370,10 @@ export default function CoachChatPage() {
           <div className="bg-[#F5F3EC] p-1 rounded-2xl flex items-center gap-1 border border-[#EAF0EB]">
             <button
               onClick={() => handleModeChange("interview")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                currentMode === "interview"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${currentMode === "interview"
                   ? "bg-[#52795C] text-white shadow-sm"
                   : "text-[#5C665D] hover:text-[#2D3A2F]"
-              }`}
+                }`}
             >
               <Target className="w-3.5 h-3.5" />
               <span>Mock Interview</span>
@@ -377,11 +381,10 @@ export default function CoachChatPage() {
 
             <button
               onClick={() => handleModeChange("advisor")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                currentMode === "advisor"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${currentMode === "advisor"
                   ? "bg-[#52795C] text-white shadow-sm"
                   : "text-[#5C665D] hover:text-[#2D3A2F]"
-              }`}
+                }`}
             >
               <Compass className="w-3.5 h-3.5" />
               <span>Career Advisor</span>
@@ -408,21 +411,19 @@ export default function CoachChatPage() {
             <button
               key={s.id}
               onClick={() => setActiveSessionId(s.id)}
-              className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border shadow-sm ${
-                isActive
+              className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border shadow-sm ${isActive
                   ? "bg-[#52795C] text-white border-[#52795C]"
                   : "bg-white text-[#2D3A2F] border-[#EAF0EB] hover:border-[#52795C]/40 hover:bg-[#F5F3EC]"
-              }`}
+                }`}
             >
               <span className="max-w-[160px] truncate">{s.title}</span>
               <span
                 onClick={(e) => handleDeleteSession(e, s.id)}
                 title="Delete chat session"
-                className={`p-0.5 rounded-md transition-colors ${
-                  isActive
+                className={`p-0.5 rounded-md transition-colors ${isActive
                     ? "text-white/80 hover:text-white hover:bg-black/10"
                     : "text-gray-400 hover:text-red-500"
-                }`}
+                  }`}
               >
                 <X className="w-3 h-3" />
               </span>
@@ -458,11 +459,10 @@ export default function CoachChatPage() {
                 )}
 
                 <div
-                  className={`relative p-4 rounded-2xl text-sm leading-relaxed max-w-[80%] shadow-sm ${
-                    isUser
+                  className={`relative p-4 rounded-2xl text-sm leading-relaxed max-w-[80%] shadow-sm ${isUser
                       ? "bg-[#52795C] text-white rounded-tr-sm"
                       : "bg-[#F5F3EC] text-[#2D3A2F] rounded-tl-sm border border-[#EAF0EB]"
-                  }`}
+                    }`}
                 >
                   {/* 2. Cleaned Markdown formatting for Kiki */}
                   <p className="whitespace-pre-wrap">
@@ -471,9 +471,8 @@ export default function CoachChatPage() {
                   {/* 1. Prevent Hydration Mismatch on timestamps */}
                   {mounted && msg.timestamp && (
                     <span
-                      className={`text-[10px] mt-1.5 block text-right font-medium ${
-                        isUser ? "text-white/70" : "text-gray-400"
-                      }`}
+                      className={`text-[10px] mt-1.5 block text-right font-medium ${isUser ? "text-white/70" : "text-gray-400"
+                        }`}
                     >
                       {msg.timestamp}
                     </span>
@@ -554,15 +553,22 @@ export default function CoachChatPage() {
               }
               className="flex-1 bg-[#FDFBF7] border-2 border-[#EAF0EB] rounded-2xl px-5 py-3 text-sm text-[#2D3A2F] focus:outline-none focus:border-[#52795C] focus:bg-white placeholder:text-gray-400 transition-all shadow-sm"
             />
-            <button
-              type="button"
-              onClick={() => handleSendMessage(input)}
-              disabled={!input.trim() || isLoading}
-              className="bg-[#52795C] hover:bg-[#3b5943] text-white p-3 rounded-2xl shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-[#52795C] cursor-pointer disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
-              title="Send message"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            {isLoading ? (
+              <div className="relative p-3 rounded-2xl bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden font-bold text-[#52795C] shadow-sm flex-shrink-0">
+                <BorderTrail size={50} style={{ boxShadow: '0px 0px 30px 15px rgba(82, 121, 92, 0.4)' }} />
+                <Send className="w-4 h-4 animate-pulse text-[#52795C]" />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSendMessage(input)}
+                disabled={!input.trim()}
+                className="bg-[#52795C] hover:bg-[#3b5943] text-white p-3 rounded-2xl shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-[#52795C] cursor-pointer disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+                title="Send message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

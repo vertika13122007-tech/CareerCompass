@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Wand2,
-  Loader2,
   CheckCircle2,
   AlertCircle,
   Copy,
@@ -15,6 +14,9 @@ import {
   Sparkles,
   Download,
 } from "lucide-react";
+import { BorderTrail } from "@/components/core/border-trail";
+import { TextShimmer } from "@/components/core/text-shimmer";
+import { TextEffect } from "@/components/core/text-effect";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -73,8 +75,6 @@ export default function TailorPage() {
 
       setSuccessMessage("Successfully generated and added to your Resume Library!");
       setTailoredOutput(data.extracted_text || data.tailored_text || "");
-      setJobDescription("");
-      setResumeName("");
     } catch (err: any) {
       console.error("Error tailoring resume:", err);
       setErrorMessage(err.message || "An unexpected error occurred while tailoring your resume.");
@@ -96,7 +96,7 @@ export default function TailorPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "tailored_resume.md");
+    link.setAttribute("download", `${resumeName || "tailored_resume"}.md`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -140,17 +140,17 @@ export default function TailorPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-120px)] flex flex-col pb-16 animate-in fade-in duration-500 max-w-5xl mx-auto w-full px-4 sm:px-6">
+    <div className="min-h-[calc(100vh-120px)] flex flex-col pb-16 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto w-full px-2 sm:px-4 space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EAF0EB] pt-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EAF0EB]">
         <div className="flex items-center gap-4">
           <div className="p-3.5 bg-[#EAF0EB] text-[#52795C] rounded-2xl shadow-sm">
             <Wand2 className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-[#2D3A2F] tracking-tight">
+            <TextEffect className="text-3xl font-extrabold text-[#2D3A2F] tracking-tight" preset="fade-in-blur" speedReveal={1.1} speedSegment={0.3}>
               Tailor Resume
-            </h1>
+            </TextEffect>
             <p className="text-sm text-[#5C665D] mt-1">
               Generate a custom version of your active resume for a specific job and save it to your library.
             </p>
@@ -158,16 +158,16 @@ export default function TailorPage() {
         </div>
 
         {activeResumeName && (
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-[#F5F3EC] rounded-full border border-[#E8E4DA] text-xs font-semibold text-[#5C665D] self-start sm:self-center">
-            <span className="w-2 h-2 rounded-full bg-[#52795C] animate-pulse"></span>
-            Active Source: <span className="text-[#2D3A2F] font-bold">{activeResumeName}</span>
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-[#F5F3EC] rounded-full border border-[#EAF0EB] text-xs font-semibold text-[#5C665D] self-start sm:self-center shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#52795C] animate-pulse" />
+            <span>Active Source: <strong className="text-[#2D3A2F]">{activeResumeName}</strong></span>
           </div>
         )}
       </div>
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="mt-6 bg-[#FCEAE8] text-[#B74134] p-4 rounded-2xl border border-[#F9D6D3] flex items-start gap-3 animate-in fade-in duration-300">
+        <div className="bg-[#FCEAE8] text-[#B74134] p-4 rounded-2xl border border-[#F9D6D3] flex items-start gap-3 animate-in fade-in duration-300">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="flex-1 text-sm font-medium">
             <p>{errorMessage}</p>
@@ -185,27 +185,28 @@ export default function TailorPage() {
 
       {/* Success Alert */}
       {successMessage && (
-        <div className="mt-6 bg-[#EDF7F0] text-[#2E6A3E] p-4 rounded-2xl border border-[#D1EBD9] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-300">
+        <div className="bg-[#EDF7F0] text-[#2E6A3E] p-4 rounded-2xl border border-[#D1EBD9] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-300">
           <div className="flex items-center gap-3">
             <div className="p-1 bg-[#D1EBD9] rounded-full text-[#2E6A3E]">
               <CheckCircle2 className="w-5 h-5" />
             </div>
-            <p className="text-sm font-bold">{successMessage}</p>
+            <p className="text-sm font-bold text-[#2D3A2F]">{successMessage}</p>
           </div>
           <Link
             href="/dashboard/upload"
-            className="inline-flex items-center justify-center gap-1.5 bg-[#2E6A3E] hover:bg-[#235330] text-white px-4 py-2 rounded-full text-xs font-bold transition-colors shadow-sm"
+            className="inline-flex items-center justify-center gap-1.5 bg-[#52795C] hover:bg-[#3b5943] text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm"
           >
-            View in Resume Library <ArrowRight className="w-3.5 h-3.5" />
+            <span>View in Resume Library</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       )}
 
-      {/* Main Form Card */}
-      <div className="mt-8 bg-white border border-[#EAF0EB] rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col gap-6">
-        <form onSubmit={handleTailor} className="flex flex-col gap-6">
+      {/* Main Workspace Form Card */}
+      <div className="bg-white border-2 border-[#EAF0EB] rounded-3xl p-6 sm:p-8 shadow-sm">
+        <form onSubmit={handleTailor} className="space-y-6">
           {/* New Resume Name Field */}
-          <div className="flex flex-col gap-2">
+          <div className="space-y-2">
             <label
               htmlFor="resume-name-input"
               className="text-xs font-bold text-[#2D3A2F] uppercase tracking-wider flex items-center justify-between"
@@ -220,7 +221,7 @@ export default function TailorPage() {
               type="text"
               value={resumeName}
               onChange={(e) => setResumeName(e.target.value)}
-              placeholder="e.g., Google SDE Tailored"
+              placeholder="e.g., Google SDE Tailored, Stripe Backend Engineer"
               className="w-full bg-[#FAF9F5] border-2 border-[#EAF0EB] rounded-2xl px-5 py-3.5 text-[#2D3A2F] text-sm font-medium placeholder-[#8A958C] focus:bg-white focus:border-[#52795C] focus:outline-none transition-all shadow-inner"
               disabled={isTailoring}
               required
@@ -228,7 +229,7 @@ export default function TailorPage() {
           </div>
 
           {/* Target Job Description Field */}
-          <div className="flex flex-col gap-2">
+          <div className="space-y-2">
             <label
               htmlFor="job-description-input"
               className="text-xs font-bold text-[#2D3A2F] uppercase tracking-wider flex items-center justify-between"
@@ -249,39 +250,44 @@ export default function TailorPage() {
             />
           </div>
 
-          {/* Action Button */}
+          {/* Action Button & Note */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <p className="text-xs text-[#5C665D]">
               Rewrites your experience and skills using Gemini AI to maximize ATS keyword alignment.
             </p>
-            <button
-              type="submit"
-              disabled={!resumeName.trim() || !jobDescription.trim() || isTailoring}
-              className="w-full sm:w-auto bg-[#52795C] hover:bg-[#3B5942] text-white rounded-full px-8 py-4 font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-            >
-              {isTailoring ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>AI is tailoring your resume...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  <span>✨ Generate &amp; Save Tailored Resume</span>
-                </>
-              )}
-            </button>
+            {isTailoring ? (
+              <div className="relative rounded-2xl px-8 py-4 bg-[#F5F3EC] flex items-center justify-center overflow-hidden font-bold text-sm text-[#52795C] shadow-sm flex-shrink-0">
+                <BorderTrail
+                  size={100}
+                  style={{
+                    boxShadow: '0px 0px 60px 30px rgba(82, 121, 92, 0.4), 0 0px 100px 50px rgba(0, 0, 0, 0.2)',
+                  }}
+                />
+                <TextShimmer className="font-mono text-sm font-bold text-[#52795C]" duration={1.2}>
+                  Tailoring Resume with Gemini AI...
+                </TextShimmer>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={!resumeName.trim() || !jobDescription.trim()}
+                className="w-full sm:w-auto bg-[#52795C] hover:bg-[#3b5943] text-white rounded-2xl px-8 py-4 font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>✨ Generate &amp; Save Tailored Resume</span>
+              </button>
+            )}
           </div>
         </form>
       </div>
 
-      {/* Success & Preview View */}
+      {/* Clean Markdown Preview Card Displaying Generated Resume */}
       {tailoredOutput && (
-        <div className="mt-8 bg-white border border-[#EAF0EB] rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white border-2 border-[#EAF0EB] rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Card Top Toolbar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EAF0EB]">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-[#EAF0EB] text-[#52795C] rounded-xl">
+              <div className="p-2.5 bg-[#EAF0EB] text-[#52795C] rounded-xl shadow-xs">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -296,26 +302,24 @@ export default function TailorPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               {/* Toggle view mode */}
-              <div className="flex bg-[#F5F3EC] p-1 rounded-full text-xs font-bold text-[#5C665D] border border-[#E8E4DA]">
+              <div className="flex bg-[#F5F3EC] p-1 rounded-xl text-xs font-bold text-[#5C665D] border border-[#EAF0EB]">
                 <button
                   type="button"
                   onClick={() => setViewMode("formatted")}
-                  className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                    viewMode === "formatted"
-                      ? "bg-white text-[#2D3A2F] shadow-sm font-extrabold"
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${viewMode === "formatted"
+                      ? "bg-white text-[#2D3A2F] shadow-xs font-extrabold"
                       : "hover:text-[#2D3A2F]"
-                  }`}
+                    }`}
                 >
                   Formatted
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("raw")}
-                  className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                    viewMode === "raw"
-                      ? "bg-white text-[#2D3A2F] shadow-sm font-extrabold"
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${viewMode === "raw"
+                      ? "bg-white text-[#2D3A2F] shadow-xs font-extrabold"
                       : "hover:text-[#2D3A2F]"
-                  }`}
+                    }`}
                 >
                   Raw Markdown
                 </button>
@@ -325,7 +329,7 @@ export default function TailorPage() {
               <button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FAF9F5] hover:bg-[#EAF0EB] border border-[#EAF0EB] text-[#2D3A2F] rounded-full text-xs font-bold transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FAF9F5] hover:bg-[#EAF0EB] border border-[#EAF0EB] text-[#2D3A2F] rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 {copied ? (
                   <>
@@ -344,19 +348,19 @@ export default function TailorPage() {
               <button
                 type="button"
                 onClick={handleDownloadMarkdown}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FAF9F5] hover:bg-[#EAF0EB] border border-[#EAF0EB] text-[#2D3A2F] rounded-full text-xs font-bold transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FAF9F5] hover:bg-[#EAF0EB] border border-[#EAF0EB] text-[#2D3A2F] rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 title="Download as Markdown"
               >
                 <Download className="w-3.5 h-3.5 text-[#5C665D]" />
                 <span>Export .md</span>
               </button>
 
-              {/* View in Resume Library Button */}
+              {/* Quick Library Link */}
               <Link
                 href="/dashboard/upload"
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#52795C] hover:bg-[#3B5942] text-white rounded-full text-xs font-bold transition-colors shadow-sm cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#52795C] hover:bg-[#3b5943] text-white rounded-xl text-xs font-bold transition-colors shadow-sm cursor-pointer"
               >
-                <span>View in Resume Library</span>
+                <span>Resume Library</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -435,16 +439,17 @@ export default function TailorPage() {
             </div>
           )}
 
-          {/* Bottom Call to Action */}
+          {/* Quick Library Footer Call to Action */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <p className="text-xs text-[#5C665D]">
-              Want to make this new version your default resume for scoring and mock interviews?
+              Want to make this new version your active default resume?
             </p>
             <Link
               href="/dashboard/upload"
-              className="inline-flex items-center gap-2 text-xs font-bold text-[#52795C] hover:text-[#3B5942] underline"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#52795C] hover:text-[#3b5943] underline"
             >
-              Activate it in Resume Library <ArrowRight className="w-3.5 h-3.5" />
+              <span>Manage in Resume Library</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>

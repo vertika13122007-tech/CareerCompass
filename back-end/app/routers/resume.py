@@ -23,7 +23,7 @@ from typing import Optional
 from fastapi import Header
 
 def _get_user_for_request(user_id: int, authorization: Optional[str], db: Session) -> User:
-    if authorization and authorization.startswith("Bearer "):
+    if isinstance(authorization, str) and authorization.startswith("Bearer "):
         try:
             from app.utils.jwt import decode_access_token
             token = authorization.split(" ")[1]
@@ -80,7 +80,7 @@ def get_resume(
     "/",
     response_model=ResumeDeleteResponse
 )
-def delete_resume(
+def delete_user_resume(
     logged_in_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -172,3 +172,25 @@ def activate_resume(
     db.commit()
     
     return {"message": "Resume activated"}
+
+
+@router.delete("/{resume_id}")
+def delete_resume(resume_id: int, db: Session = Depends(get_db)):
+    # Assuming user_id=1
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == 1).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    # Prevent deleting the active resume if it's the only one left, or handle gracefully:
+    was_active = resume.is_active
+    db.delete(resume)
+    db.commit()
+    
+    # If the deleted resume was active, make the most recent remaining resume active automatically
+    if was_active:
+        latest_remaining = db.query(Resume).filter(Resume.user_id == 1).order_by(Resume.created_at.desc()).first()
+        if latest_remaining:
+            latest_remaining.is_active = True
+            db.commit()
+            
+    return {"message": "Resume deleted successfully"}

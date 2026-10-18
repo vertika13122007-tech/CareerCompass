@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.clay-card {
+  background: #ffffff;
+  border-radius: 2.5rem;
+  border: 1px solid #EAF0EB;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04),
+    inset 1px 1px 4px rgba(255, 255, 255, 0.9);
+}
+
+.clay-card-mint {
+  background: #F0FDF4;
+  border-radius: 2.5rem;
+  border: 1px solid #DCFCE7;
+  box-shadow: 0 10px 30px rgba(82, 121, 92, 0.06),
+    inset 1px 1px 4px rgba(255, 255, 255, 0.9);
+}
+
+.clay-tile {
+  background: #ffffff;
+  border-radius: 1.5rem;
+  border: 1px solid #EAF0EB;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.9);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.clay-tile:hover {
+  border-color: rgba(82, 121, 92, 0.4);
+  box-shadow: 0 12px 28px rgba(82, 121, 92, 0.08),
+    inset 1px 1px 4px rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+}
+
+.clay-btn-primary {
+  background: #52795C;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(82, 121, 92, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clay-btn-primary:hover:not(:disabled) {
+  background: #3b5943;
+  box-shadow: 0 6px 20px rgba(82, 121, 92, 0.35);
+  transform: translateY(-1px);
+}

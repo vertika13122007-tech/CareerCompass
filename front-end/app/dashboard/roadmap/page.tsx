@@ -14,6 +14,11 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
+import { BorderTrail } from "@/components/core/border-trail";
+import { TextShimmer } from "@/components/core/text-shimmer";
+import { TextEffect } from "@/components/core/text-effect";
+import { AnimatedNumber } from "@/components/core/animated-number";
+import { InView } from "@/components/core/in-view";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -241,9 +246,9 @@ export default function RoadmapPage() {
   const activePhases = Array.isArray(activeRoadmap?.phases)
     ? activeRoadmap.phases
     : activeRoadmap?.phases?.phases ||
-      activeRoadmap?.phases?.roadmap ||
-      activeRoadmap?.phases?.steps ||
-      [];
+    activeRoadmap?.phases?.roadmap ||
+    activeRoadmap?.phases?.steps ||
+    [];
 
   const activeCompletedSteps = activeRoadmap?.completedSteps || [];
 
@@ -264,14 +269,16 @@ export default function RoadmapPage() {
     totalSteps > 0 ? Math.round((validCompletedCount / totalSteps) * 100) : 0;
 
   return (
-    <div className="min-h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16 bg-white">
+    <div className="min-h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16">
       {/* Header */}
-      <div className="flex items-center gap-4 pb-6 border-b border-[#F5F3EC] flex-shrink-0 px-6 pt-6">
+      <div className="flex items-center gap-4 pb-6 border-b border-[#EAF0EB] flex-shrink-0 px-6 pt-6">
         <div className="p-3.5 bg-[#EAF0EB] text-[#52795C] rounded-full shadow-sm">
           <Map className="w-7 h-7" />
         </div>
         <div>
-          <h1 className="text-3xl font-extrabold text-[#2D3A2F]">Your Growth Roadmap</h1>
+          <TextEffect className="text-3xl font-extrabold text-[#2D3A2F]" preset="fade-in-blur" speedReveal={1.1} speedSegment={0.3}>
+            Your Growth Roadmap
+          </TextEffect>
           <p className="text-sm text-[#5C665D] mt-1">
             Explore personalized learning paths, track milestone progress, and master key competencies.
           </p>
@@ -290,26 +297,23 @@ export default function RoadmapPage() {
                   setActiveRoadmapId(r.id);
                   setIsCreatingNew(false);
                 }}
-                className={`group flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border-2 shadow-sm ${
-                  isActive
+                className={`group flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border-2 shadow-sm ${isActive
                     ? "bg-[#52795C] text-white border-[#52795C] shadow-md"
                     : "bg-white text-[#2D3A2F] border-[#EAF0EB] hover:border-[#52795C]/40 hover:bg-[#F5F3EC]"
-                }`}
+                  }`}
               >
                 <span>{r.targetRole}</span>
                 <span
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    isActive ? "bg-white/20 text-white" : "bg-[#F5F3EC] text-[#5C665D]"
-                  }`}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-[#F5F3EC] text-[#5C665D]"
+                    }`}
                 >
                   {r.timeframe}
                 </span>
                 <span
                   onClick={(e) => handleDeleteRoadmap(e, r.id)}
                   title="Delete roadmap"
-                  className={`ml-1 p-0.5 rounded-full hover:bg-black/10 transition-colors ${
-                    isActive ? "text-white/80 hover:text-white" : "text-gray-400 hover:text-red-500"
-                  }`}
+                  className={`ml-1 p-0.5 rounded-full hover:bg-black/10 transition-colors ${isActive ? "text-white/80 hover:text-white" : "text-gray-400 hover:text-red-500"
+                    }`}
                 >
                   <X className="w-3.5 h-3.5" />
                 </span>
@@ -319,11 +323,10 @@ export default function RoadmapPage() {
 
           <button
             onClick={() => setIsCreatingNew(true)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border-2 shadow-sm ${
-              isCreatingNew
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border-2 shadow-sm ${isCreatingNew
                 ? "bg-[#2D3A2F] text-white border-[#2D3A2F]"
                 : "bg-white text-[#52795C] border-dashed border-[#52795C]/50 hover:bg-[#EAF0EB]/50"
-            }`}
+              }`}
           >
             <Plus className="w-4 h-4" />
             <span>New Roadmap</span>
@@ -422,14 +425,28 @@ export default function RoadmapPage() {
                 </div>
 
                 <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={!targetRole.trim() || isLoading}
-                    className="w-full rounded-2xl bg-[#52795C] text-white p-4 font-bold hover:bg-[#3B5942] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    <span>Generate Roadmap</span>
-                  </button>
+                  {isLoading ? (
+                    <div className="relative w-full rounded-2xl bg-zinc-200 dark:bg-zinc-800 p-4 flex items-center justify-center overflow-hidden font-bold text-sm text-[#52795C] shadow-sm">
+                      <BorderTrail
+                        size={100}
+                        style={{
+                          boxShadow: '0px 0px 60px 30px rgba(82, 121, 92, 0.4), 0 0px 100px 50px rgba(0, 0, 0, 0.2)',
+                        }}
+                      />
+                      <TextShimmer className="font-mono text-sm font-bold text-[#52795C]" duration={1.2}>
+                        Analyzing Skill Gaps & Building Roadmap...
+                      </TextShimmer>
+                    </div>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!targetRole.trim()}
+                      className="w-full rounded-2xl bg-[#52795C] text-white p-4 font-bold hover:bg-[#3b5943] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      <span>Generate Roadmap</span>
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
@@ -448,7 +465,13 @@ export default function RoadmapPage() {
                   </span>
                 </div>
                 <span className="text-xs font-bold text-[#52795C]">
-                  {progressPercentage === 100 ? "🎉 All Completed!" : `${progressPercentage}%`}
+                  {progressPercentage === 100 ? (
+                    "🎉 All Completed!"
+                  ) : (
+                    <>
+                      <AnimatedNumber value={progressPercentage} duration={1200} />%
+                    </>
+                  )}
                 </span>
               </div>
               <div className="w-full bg-[#EAF0EB] rounded-full h-2.5 overflow-hidden">
@@ -482,17 +505,15 @@ export default function RoadmapPage() {
                   return (
                     <div
                       key={item.phase || item.title || index}
-                      className={`relative flex flex-col md:flex-row items-center w-full ${
-                        isEven ? "md:justify-start" : "md:justify-end"
-                      }`}
+                      className={`relative flex flex-col md:flex-row items-center w-full ${isEven ? "md:justify-start" : "md:justify-end"
+                        }`}
                     >
                       {/* Center Node / Pin */}
                       <div
-                        className={`absolute left-1/2 top-6 -translate-x-1/2 -translate-y-1/2 hidden md:flex w-14 h-14 rounded-full items-center justify-center z-10 shadow-sm border-4 border-white transition-all duration-300 ${
-                          isPhaseCompleted
+                        className={`absolute left-1/2 top-6 -translate-x-1/2 -translate-y-1/2 hidden md:flex w-14 h-14 rounded-full items-center justify-center z-10 shadow-sm border-4 border-white transition-all duration-300 ${isPhaseCompleted
                             ? "bg-[#52795C] text-white shadow-md scale-105"
                             : "bg-[#EAF0EB] text-[#52795C]"
-                        }`}
+                          }`}
                       >
                         {isPhaseCompleted ? (
                           <Check className="w-6 h-6 stroke-[3]" />
@@ -506,11 +527,10 @@ export default function RoadmapPage() {
                         <div className="bg-white border border-[#F5F3EC] rounded-3xl p-6 shadow-[0_8px_30px_rgba(214,211,204,0.4)] w-full relative z-0 transition-transform hover:-translate-y-1 duration-300">
                           {/* Mobile Node Indicator */}
                           <div
-                            className={`flex md:hidden w-12 h-12 rounded-full items-center justify-center mb-4 shadow-sm transition-all duration-300 ${
-                              isPhaseCompleted
+                            className={`flex md:hidden w-12 h-12 rounded-full items-center justify-center mb-4 shadow-sm transition-all duration-300 ${isPhaseCompleted
                                 ? "bg-[#52795C] text-white"
                                 : "bg-[#EAF0EB] text-[#52795C]"
-                            }`}
+                              }`}
                           >
                             {isPhaseCompleted ? (
                               <Check className="w-5 h-5 stroke-[3]" />
@@ -557,11 +577,10 @@ export default function RoadmapPage() {
                                   }
                                 >
                                   <span
-                                    className={`flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold mt-0.5 transition-all duration-200 ${
-                                      isStepCompleted
+                                    className={`flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold mt-0.5 transition-all duration-200 ${isStepCompleted
                                         ? "bg-[#52795C] text-white shadow-sm"
                                         : "bg-[#EAF0EB] text-[#52795C] group-hover:bg-[#d8e5da]"
-                                    }`}
+                                      }`}
                                   >
                                     {isStepCompleted ? (
                                       <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -570,11 +589,10 @@ export default function RoadmapPage() {
                                     )}
                                   </span>
                                   <span
-                                    className={`transition-all duration-200 ${
-                                      isStepCompleted
+                                    className={`transition-all duration-200 ${isStepCompleted
                                         ? "line-through text-gray-400"
                                         : "text-[#5C665D] group-hover:text-[#2D3A2F]"
-                                    }`}
+                                      }`}
                                   >
                                     {actionText}
                                   </span>
