@@ -6,7 +6,7 @@ import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
 import { TextEffect } from "@/components/core/text-effect";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/auth";
 
 const TONE_OPTIONS = [
   "Professional",
@@ -37,7 +37,7 @@ export default function CoverLetterPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/ai/cover-letter`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           company_name: companyName.trim() || "Hiring Team",
           job_title: jobTitle.trim() || "Target Position",
@@ -58,7 +58,7 @@ export default function CoverLetterPage() {
       // Silent background call to save generated document in history
       fetch(`${API_BASE_URL}/ai/save-document`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           document_type: "Cover Letter",
           job_title: jobTitle.trim() || "Cover Letter",

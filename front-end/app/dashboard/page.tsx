@@ -7,7 +7,7 @@ import { CheckCircle2, MessageSquare, Map, Sparkles, Lightbulb, ArrowRight, File
 import { InfiniteSlider } from "@/components/core/infinite-slider";
 import { ProgressiveBlur } from "@/components/core/progressive-blur";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders, getAuthBearerHeader } from "@/lib/auth";
 
 export default function DashboardOverviewPage() {
   const [history, setHistory] = useState<any[]>([]);
@@ -45,7 +45,7 @@ export default function DashboardOverviewPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/ai/target-match`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ target_role: roleTitle })
       });
       const data = await res.json();
@@ -66,7 +66,9 @@ export default function DashboardOverviewPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/ai/history`);
+        const res = await fetch(`${API_BASE_URL}/ai/history`, {
+          headers: getAuthBearerHeader(),
+        });
         if (res.ok) {
           const data = await res.json();
           const items = Array.isArray(data) ? data : data.history || [];
@@ -78,12 +80,16 @@ export default function DashboardOverviewPage() {
     };
     fetchHistory();
 
-    fetch(`${API_BASE_URL}/ai/current-resume`)
+    fetch(`${API_BASE_URL}/ai/current-resume`, {
+      headers: getAuthBearerHeader(),
+    })
       .then((res) => res.json())
       .then((data) => setFullResume(data.resume))
       .catch(console.error);
 
-    fetch(`${API_BASE_URL}/resume/all`)
+    fetch(`${API_BASE_URL}/resume/all`, {
+      headers: getAuthBearerHeader(),
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -97,7 +103,9 @@ export default function DashboardOverviewPage() {
     const fetchAtsScore = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/ai/ats-score`);
+        const res = await fetch(`${API_BASE_URL}/ai/ats-score`, {
+          headers: getAuthBearerHeader(),
+        });
         if (res.ok) {
           const data = await res.json();
           setAtsData(data);
@@ -113,7 +121,9 @@ export default function DashboardOverviewPage() {
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/jobs/stats`)
+    fetch(`${API_BASE_URL}/jobs/stats`, {
+      headers: getAuthBearerHeader(),
+    })
       .then(res => res.json())
       .then(data => {
         if (data.saved !== undefined) {
@@ -122,7 +132,9 @@ export default function DashboardOverviewPage() {
       })
       .catch(err => console.error("Failed to fetch job stats:", err));
 
-    fetch(`${API_BASE_URL}/activity/recent`)
+    fetch(`${API_BASE_URL}/activity/recent`, {
+      headers: getAuthBearerHeader(),
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

@@ -1,8 +1,15 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.User import User
+from app.models.Resume import Resume
+from app.models.JobApplication import JobApplication
+from app.models.ActivityLog import ActivityLog
+from app.models.Profile import Profile
+from app.models.Job_Preference import JobPreference
+from app.models.PasswordResetOTP import PasswordResetOTP
 from app.schemas.user import UserCreate,VerifyOTP,UserProfile
 from app.services.auth_service import signup as signup_service
 from fastapi.security import OAuth2PasswordRequestForm
@@ -17,6 +24,61 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+
+@router.delete("/account")
+def delete_user_account(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Permanently deletes the currently authenticated user and all their associated data.
+    """
+    try:
+        # Delete related records to maintain database integrity (or rely on database cascade rules)
+        db.query(Resume).filter(Resume.user_id == current_user.id).delete()
+        db.query(JobApplication).filter(JobApplication.user_id == current_user.id).delete()
+        db.query(ActivityLog).filter(ActivityLog.user_id == current_user.id).delete()
+        db.query(Profile).filter(Profile.user_id == current_user.id).delete()
+        db.query(JobPreference).filter(JobPreference.user_id == current_user.id).delete()
+        db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == current_user.id).delete()
+
+        # Delete the user account
+        db.delete(current_user)
+        db.commit()
+
+        return {"message": "Account successfully deleted."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete account: {str(e)}"
+        )
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@router.patch("/password")
+def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    import bcrypt
+    from app.utils.security import hash_password
+
+    login_bytes = request.current_password.encode('utf-8')
+    hashed_bytes = current_user.hashed_password.encode('utf-8')
+    if not bcrypt.checkpw(login_bytes, hashed_bytes):
+        raise HTTPException(
+            status_code=400,
+            detail="Current password is incorrect"
+        )
+
+    current_user.hashed_password = hash_password(request.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
 
 @router.post(
     "/signup",

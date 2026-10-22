@@ -18,7 +18,7 @@ import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
 import { TextEffect } from "@/components/core/text-effect";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders, getAuthBearerHeader } from "@/lib/auth";
 
 export default function TailorPage() {
   const [jobDescription, setJobDescription] = useState("");
@@ -35,7 +35,9 @@ export default function TailorPage() {
   useEffect(() => {
     const fetchActiveResume = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/ai/current-resume`);
+        const res = await fetch(`${API_BASE_URL}/ai/current-resume`, {
+          headers: getAuthBearerHeader(),
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.resume_name) {
@@ -60,7 +62,7 @@ export default function TailorPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/ai/tailor-resume`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           job_description: jobDescription,
           resume_name: resumeName,

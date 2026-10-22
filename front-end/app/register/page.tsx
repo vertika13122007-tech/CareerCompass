@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, Check, ArrowRight, Loader2, AlertCircle, KeyRound } from "lucide-react";
@@ -22,6 +22,13 @@ export default function RegisterPage() {
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpNotice, setOtpNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("careercompass_token") : null;
+    if (token) {
+      router.push("/dashboard");
+    }
+  }, [router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

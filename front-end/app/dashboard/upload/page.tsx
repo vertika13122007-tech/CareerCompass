@@ -7,7 +7,7 @@ import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
 import { TextEffect } from "@/components/core/text-effect";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders, getAuthBearerHeader } from "@/lib/auth";
 
 const loadingMessages = [
   "Uploading document... 📄",
@@ -42,7 +42,9 @@ export default function UploadPage() {
 
   const fetchResumes = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/resume/all`);
+      const res = await fetch(`${API_BASE_URL}/resume/all`, {
+        headers: getAuthBearerHeader(),
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -62,6 +64,7 @@ export default function UploadPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/resume/${id}/activate`, {
         method: "PATCH",
+        headers: getAuthBearerHeader(),
       });
       if (res.ok) {
         await fetchResumes();
@@ -75,6 +78,7 @@ export default function UploadPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/resume/${id}`, {
         method: "DELETE",
+        headers: getAuthBearerHeader(),
       });
       if (res.ok) {
         setResumes((prev) => prev.filter((r) => r.id !== id));
@@ -116,6 +120,7 @@ export default function UploadPage() {
       const targetUrl = `${API_BASE_URL}/resume/upload`;
       const response = await fetch(targetUrl, {
         method: "POST",
+        headers: getAuthBearerHeader(),
         body: formData,
       });
 
@@ -126,7 +131,9 @@ export default function UploadPage() {
         // If data only contains message, fetch from current-resume endpoint
         if (!data.parsed_resume && !data.resume && data.message) {
           try {
-            const currentRes = await fetch(`${API_BASE_URL}/ai/current-resume`);
+            const currentRes = await fetch(`${API_BASE_URL}/ai/current-resume`, {
+              headers: getAuthBearerHeader(),
+            });
             if (currentRes.ok) {
               const currentData = await currentRes.json();
               extracted = currentData.resume || currentData;
@@ -459,7 +466,7 @@ export default function UploadPage() {
                     const jsonData = JSON.parse(parsedData);
                     await fetch(`${API_BASE_URL}/ai/current-resume`, {
                       method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
+                      headers: getAuthHeaders(),
                       body: JSON.stringify({ parsed_data: jsonData }),
                     });
                     setIsEditing(false);

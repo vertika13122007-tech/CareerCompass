@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sparkles, Mail, Lock, Eye, EyeOff, Check, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Mail, Lock, Eye, EyeOff, Check, ArrowRight, Loader2 } from "lucide-react";
 import { API_BASE_URL, setAuthToken, setUserData } from "@/lib/auth";
 import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
@@ -15,17 +15,24 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("careercompass_token") : null;
+    if (token) {
+      router.push("/dashboard");
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError("Please fill in both email and password.");
+      setErrorMessage("Please fill in both email and password.");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
+    setErrorMessage("");
 
     try {
       const formData = new URLSearchParams();
@@ -43,7 +50,9 @@ export default function LoginPage() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data?.detail || "Invalid email or password. Please try again.");
+        setErrorMessage(data?.detail || "Invalid email or password. Please try again.");
+        setIsLoading(false);
+        return;
       }
 
       if (data?.access_token) {
@@ -53,11 +62,13 @@ export default function LoginPage() {
         }
         router.push("/dashboard");
       } else {
-        throw new Error("Login failed: missing access token from server.");
+        setErrorMessage("Login failed: missing access token from server.");
+        setIsLoading(false);
+        return;
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err.message || "Failed to log in. Please check your credentials.");
+      setErrorMessage(err.message || "Failed to log in. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -170,15 +181,14 @@ export default function LoginPage() {
             </div>
 
             {/* Error Notification */}
-            {error && (
-              <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3.5 rounded-xl flex items-start gap-2.5 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl font-medium">
+                {errorMessage}
               </div>
             )}
 
             {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4" suppressHydrationWarning>
               {/* Email Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#5C665D] block">
@@ -192,6 +202,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
                     required
+                    suppressHydrationWarning
                     className="w-full pl-10 pr-4 py-3 bg-[#F9FAFB] border border-[#EAF0EB] rounded-xl text-sm font-medium text-[#2D3A2F] placeholder:text-gray-400 focus:outline-none focus:border-[#52795C] focus:bg-white transition-all"
                   />
                 </div>
@@ -212,11 +223,13 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
+                    suppressHydrationWarning
                     className="w-full pl-10 pr-10 py-3 bg-[#F9FAFB] border border-[#EAF0EB] rounded-xl text-sm font-medium text-[#2D3A2F] placeholder:text-gray-400 focus:outline-none focus:border-[#52795C] focus:bg-white transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    suppressHydrationWarning
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2D3A2F] transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -231,6 +244,7 @@ export default function LoginPage() {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
+                    suppressHydrationWarning
                     className="rounded border-gray-300 text-[#52795C] focus:ring-[#52795C] cursor-pointer"
                   />
                   <span>Remember me</span>
@@ -244,6 +258,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
+                suppressHydrationWarning
                 className="w-full mt-2 bg-[#52795C] hover:bg-[#3b5943] text-white font-bold py-3.5 rounded-xl shadow-md shadow-[#52795C]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (

@@ -5,7 +5,7 @@ import { Plus, Briefcase, Trash2 } from "lucide-react";
 import { TextEffect } from "@/components/core/text-effect";
 import { AnimatedNumber } from "@/components/core/animated-number";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders, getAuthBearerHeader } from "@/lib/auth";
 const COLUMNS = ["Saved", "Applied", "Interviewing", "Offer"];
 
 export default function JobsPage() {
@@ -15,7 +15,9 @@ export default function JobsPage() {
   const [newJob, setNewJob] = useState({ company_name: "", job_title: "", status: "Saved" });
 
   const fetchJobs = () => {
-    fetch(`${API_BASE_URL}/jobs/all`)
+    fetch(`${API_BASE_URL}/jobs/all`, {
+      headers: getAuthBearerHeader(),
+    })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -39,7 +41,7 @@ export default function JobsPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/jobs/add`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newJob)
       });
 
@@ -58,7 +60,7 @@ export default function JobsPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/jobs/${jobId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -76,6 +78,7 @@ export default function JobsPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
         method: "DELETE",
+        headers: getAuthBearerHeader(),
       });
 
       if (res.ok) {

@@ -32,7 +32,7 @@ interface ChatSession {
   createdAt: string;
 }
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/auth";
 
 const QUICK_PROMPTS = {
   interview: [
@@ -257,7 +257,7 @@ export default function CoachChatPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/ai/coach-chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           messages: updatedMessages.map((m) => ({ role: m.role, content: m.content })),
           mode: currentMode,

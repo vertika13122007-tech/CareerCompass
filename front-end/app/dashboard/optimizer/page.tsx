@@ -7,7 +7,7 @@ import { TextShimmer } from "@/components/core/text-shimmer";
 import { TextEffect } from "@/components/core/text-effect";
 import { AnimatedNumber } from "@/components/core/animated-number";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/auth";
 
 export default function OptimizerPage() {
   const [jobDescription, setJobDescription] = useState("");
@@ -70,7 +70,7 @@ export default function OptimizerPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/ai/optimize`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ job_description: jobDescription }),
       });
 
@@ -101,7 +101,7 @@ export default function OptimizerPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/ai/apply-optimizations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           missing_keywords: [],
           bullet_upgrades: [{ original: upgrade.original, optimized: upgrade.optimized }],
@@ -121,7 +121,7 @@ export default function OptimizerPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/ai/apply-optimizations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           missing_keywords: result.missingKeywords || result.missing_keywords || [],
           bullet_upgrades: result.bulletUpgrades || [],

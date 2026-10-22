@@ -20,7 +20,7 @@ import { TextEffect } from "@/components/core/text-effect";
 import { AnimatedNumber } from "@/components/core/animated-number";
 import { InView } from "@/components/core/in-view";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/auth";
 
 // Fallback Mock Data
 const dummyRoadmapData = [
@@ -146,15 +146,10 @@ export default function RoadmapPage() {
     setErrorMessage(null);
 
     const requestedTimeframe = `${durationNum} ${durationUnit}`;
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
     try {
       const response = await fetch(`${API_BASE_URL}/ai/roadmap`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ target_role: targetRole.trim(), timeframe: requestedTimeframe }),
       });
 
