@@ -8,6 +8,14 @@ import { API_BASE_URL, setAuthToken, setUserData } from "@/lib/auth";
 import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
 
+const backgroundImages = [
+  "/images/image_1.png",
+  "/images/image_2.png",
+  "/images/image_3.png",
+  "/images/image_4.png",
+  "/images/image_5.png"
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -16,6 +24,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("careercompass_token") : null;
@@ -99,24 +115,36 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#2D3A2F] via-[#3b5943] to-[#52795C] text-white flex items-center justify-center p-4 sm:p-8 lg:p-12 relative overflow-hidden">
-      {/* Background Subtle Glowing Orbs */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#52795C]/30 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#2D3A2F]/50 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative overflow-hidden min-h-screen w-full text-white flex items-center justify-center p-4 sm:p-8 lg:p-12">
+      {/* Saturated Background Carousel Images */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {backgroundImages.map((src, index) => (
+          <div
+            key={src}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ease-in-out scale-105 saturate-150 contrast-110 brightness-95 ${
+              index === currentIndex ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ backgroundImage: `url(${src})` }}
+          />
+        ))}
+      </div>
+
+      {/* Balanced See-Through Olive Green Overlay Layer with Rich Blend Mode */}
+      <div className="absolute inset-0 bg-[#3b5943]/75 mix-blend-multiply backdrop-blur-[1px] z-0 pointer-events-none" />
 
       {/* Main Split-Screen Container */}
-      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center z-10">
+      <div className="relative z-10 max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         
         {/* Left Side: Branding & Value Props (lg:col-span-7) */}
         <div className="lg:col-span-7 space-y-8 text-left py-4">
           {/* Logo & Brand Header */}
           <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-emerald-300 shadow-lg group-hover:scale-105 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#52795C] shadow-lg group-hover:scale-105 transition-transform">
               <Sparkles className="w-6 h-6 stroke-[2.2]" />
             </div>
             <div className="flex items-center font-extrabold text-2xl tracking-tight">
               <span>Career</span>
-              <span className="text-emerald-300 ml-0.5">Compass</span>
+              <span className="text-[#52795C] ml-0.5">Compass</span>
             </div>
           </Link>
 
@@ -141,22 +169,16 @@ export default function LoginPage() {
             {valueProps.map((prop, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 shadow-sm"
+                className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl bg-[#1E2B22]/90 backdrop-blur-md border border-[#52795C]/40 shadow-lg"
               >
-                <div className="w-6 h-6 rounded-full bg-emerald-400 text-[#2D3A2F] flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-6 h-6 rounded-full bg-[#52795C] text-white flex items-center justify-center shrink-0 shadow-xs">
                   <Check className="w-4 h-4 stroke-[3]" />
                 </div>
-                <span className="text-sm font-semibold text-white/95">
+                <span className="text-sm font-semibold text-white tracking-wide">
                   {prop}
                 </span>
               </div>
             ))}
-          </div>
-
-          {/* Social Proof / Trust Badge */}
-          <div className="pt-2 flex items-center gap-3 text-xs text-emerald-200/70">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Used by ambitious engineers and professionals accelerating their careers.</span>
           </div>
         </div>
 
@@ -280,6 +302,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleDirectDemoAccess}
+                suppressHydrationWarning
                 className="w-full py-2.5 text-xs font-bold text-[#52795C] bg-[#F5F3EC] hover:bg-[#EAF0EB] rounded-xl transition-colors cursor-pointer"
               >
                 ⚡ Explore as Guest / Demo Mode
