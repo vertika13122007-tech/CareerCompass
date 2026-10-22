@@ -167,9 +167,8 @@ export default function RegisterPage() {
         {backgroundImages.map((src, index) => (
           <div
             key={src}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ease-in-out scale-105 saturate-150 contrast-110 brightness-95 ${
-              index === currentIndex ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ease-in-out scale-105 saturate-150 contrast-110 brightness-95 ${index === currentIndex ? "opacity-100" : "opacity-0"
+              }`}
             style={{ backgroundImage: `url(${src})` }}
           />
         ))}
@@ -180,7 +179,7 @@ export default function RegisterPage() {
 
       {/* Main Split-Screen Container */}
       <div className="relative z-10 max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-        
+
         {/* Left Side: Branding & Value Props (lg:col-span-7) */}
         <div className="lg:col-span-7 space-y-8 text-left py-4">
           {/* Logo & Brand Header */}
@@ -237,7 +236,7 @@ export default function RegisterPage() {
                 boxShadow: '0px 0px 60px 30px rgba(82, 121, 92, 0.4), 0 0px 100px 50px rgba(45, 58, 47, 0.2)',
               }}
             />
-            
+
             {/* Card Header */}
             <div className="mb-6 space-y-1">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#2D3A2F]">
