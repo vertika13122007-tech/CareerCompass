@@ -61,13 +61,13 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#2D3A2F] font-sans antialiased selection:bg-[#52795C]/25 selection:text-[#2D3A2F]">
-      
+
       {/* ========================================================= */}
       {/* 1. TOP NAVBAR                                             */}
       {/* ========================================================= */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#FAF9F6]/85 border-b border-[#EAF0EB] transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          
+
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#52795C] to-[#2D3A2F] text-white flex items-center justify-center shadow-md shadow-[#52795C]/20 group-hover:scale-105 transition-transform duration-200">
@@ -252,7 +252,7 @@ export default function LandingPage() {
 
             {/* Clean Container Shell */}
             <div className="overflow-hidden bg-white border border-[#EAF0EB] shadow-2xl rounded-3xl">
-              
+
               {/* Minimalist Top Control Bar */}
               <div className="bg-[#F9FAFB] border-b border-[#EAF0EB] px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -273,33 +273,30 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("ats")}
-                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                      activeTab === "ats"
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeTab === "ats"
                         ? "bg-white text-[#2D3A2F] shadow-xs font-bold"
                         : "hover:text-[#2D3A2F]"
-                    }`}
+                      }`}
                   >
                     ATS Scoreboard
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab("kanban")}
-                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                      activeTab === "kanban"
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeTab === "kanban"
                         ? "bg-white text-[#2D3A2F] shadow-xs font-bold"
                         : "hover:text-[#2D3A2F]"
-                    }`}
+                      }`}
                   >
                     Kanban Pipeline
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab("kiki")}
-                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                      activeTab === "kiki"
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeTab === "kiki"
                         ? "bg-white text-[#2D3A2F] shadow-xs font-bold"
                         : "hover:text-[#2D3A2F]"
-                    }`}
+                      }`}
                   >
                     Kiki Voice AI
                   </button>
@@ -571,7 +568,7 @@ export default function LandingPage() {
       {/* ========================================================= */}
       <section id="features" className="py-20 sm:py-28 bg-[#FAF9F6]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-bold uppercase tracking-wider text-[#52795C] bg-[#EAF0EB] border border-[#52795C]/20 px-3.5 py-1.5 rounded-full inline-block mb-3">
               Modern Career Intelligence
@@ -586,7 +583,7 @@ export default function LandingPage() {
 
           {/* 4 Clean Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
+
             {/* Card 1 */}
             <div className="p-8 rounded-3xl bg-[#F0FDF4] border border-[#DCFCE7] hover:border-[#52795C]/40 transition-all hover:-translate-y-1 shadow-xs hover:shadow-md group">
               <div className="w-12 h-12 rounded-2xl bg-[#52795C] text-white flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-xs">
@@ -693,7 +690,7 @@ export default function LandingPage() {
       {/* ========================================================= */}
       <section id="how-it-works" className="py-20 sm:py-28 bg-white border-t border-[#EAF0EB]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-bold uppercase tracking-wider text-[#52795C] bg-[#EAF0EB] px-3.5 py-1.5 rounded-full inline-block mb-3">
               Simple 3-Step Flow
@@ -761,9 +758,9 @@ export default function LandingPage() {
       {/* ========================================================= */}
       <section className="py-20 sm:py-28 bg-[#FAF9F6]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           <div className="relative overflow-hidden rounded-3xl bg-[#1E2B22] p-8 sm:p-14 text-white shadow-2xl border border-[#52795C]/30 text-center">
-            
+
             {/* Animated Motion Primitive BorderTrail */}
             <BorderTrail
               size={90}
@@ -814,7 +811,7 @@ export default function LandingPage() {
       {/* ========================================================= */}
       <footer className="bg-white border-t border-[#EAF0EB] py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[#5C665D]">
-          
+
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-[#52795C] text-white flex items-center justify-center font-bold">
               <Sparkles className="w-4 h-4" />

@@ -4,19 +4,22 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardShell } from './dashboard-shell';
 import { Loader2 } from 'lucide-react';
+import { getAuthToken, removeAuthToken } from '@/lib/auth';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('careercompass_token') : null;
+    const token = getAuthToken();
     if (!token) {
+      removeAuthToken();
+      setIsAuthorized(false);
       router.push('/login');
     } else {
       setIsAuthorized(true);
     }
-  }, [router]);
+  }, []);
 
   if (!isAuthorized) {
     return (

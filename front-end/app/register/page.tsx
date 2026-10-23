@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, Check, ArrowRight, Loader2, AlertCircle, KeyRound } from "lucide-react";
-import { API_BASE_URL, setAuthToken, setUserData } from "@/lib/auth";
+import { API_BASE_URL, getAuthToken, setAuthToken, setUserData } from "@/lib/auth";
 import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
 
@@ -40,11 +40,11 @@ export default function RegisterPage() {
   }, []);
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("careercompass_token") : null;
+    const token = getAuthToken();
     if (token) {
       router.push("/dashboard");
     }
-  }, [router]);
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sparkles, Mail, Lock, Eye, EyeOff, Check, ArrowRight, Loader2 } from "lucide-react";
-import { API_BASE_URL, setAuthToken, setUserData } from "@/lib/auth";
+import { API_BASE_URL, getAuthToken, setAuthToken, setUserData } from "@/lib/auth";
 import { BorderTrail } from "@/components/core/border-trail";
 import { TextShimmer } from "@/components/core/text-shimmer";
 
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Background carousel animation
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
@@ -33,12 +34,13 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // Single mount-time check: redirect if legitimately authenticated
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("careercompass_token") : null;
+    const token = getAuthToken();
     if (token) {
       router.push("/dashboard");
     }
-  }, [router]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,26 +87,34 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error("Login error:", err);
       setErrorMessage(err.message || "Failed to log in. Please check your credentials.");
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDemoLogin = () => {
-    // Quick-fill or demo login
+    // Quick-fill demo credentials
     setEmail("vertika13122007@gmail.com");
     setPassword("password123");
   };
 
   const handleDirectDemoAccess = () => {
-    // Allows instant demo entry to command center
-    setAuthToken("demo-access-token-careercompass");
-    setUserData({
-      id: 1,
-      name: "Demo Candidate",
-      email: "demo@careercompass.ai"
-    });
-    router.push("/dashboard");
+    setErrorMessage("");
+    try {
+      // Allows instant demo entry to command center
+      setAuthToken("demo-access-token-careercompass");
+      setUserData({
+        id: 1,
+        name: "Demo Candidate",
+        email: "demo@careercompass.ai"
+      });
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Demo access error:", err);
+      setErrorMessage("Failed to launch demo mode. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   const valueProps = [
