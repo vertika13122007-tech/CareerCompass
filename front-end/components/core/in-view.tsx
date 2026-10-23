@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import {
   motion,
-  useInView,
   UseInViewOptions,
   Variants,
   Transition,
@@ -14,7 +13,7 @@ export interface InViewProps {
   variants?: Variants;
   transition?: Transition;
   viewOptions?: UseInViewOptions;
-  as?: React.ElementType;
+  as?: string | React.ElementType;
   className?: string;
 }
 
@@ -36,21 +35,19 @@ export function InView({
   as = "div",
   className = "",
 }: InViewProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, viewOptions);
-
-  const MotionComponent = motion(as);
+  const Component = typeof as === "string" && as in motion ? (motion as any)[as] : motion.div;
 
   return (
-    <MotionComponent
-      ref={ref}
+    <Component
       initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      whileInView="visible"
+      viewport={viewOptions}
       variants={variants}
       transition={transition}
       className={className}
     >
       {children}
-    </MotionComponent>
+    </Component>
   );
 }
+

@@ -58,14 +58,108 @@ body {
 }
 
 .clay-btn-primary {
-  background: #52795C;
+  background: linear-gradient(180deg, #388452 0%, #29683e 100%);
+  box-shadow: 0 8px 0 #183e25, 0 14px 22px rgba(24, 62, 37, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.5), inset 0 -3px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateY(0);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(82, 121, 92, 0.25);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-shadow: 0 1px 2px rgba(0, 30, 15, 0.5);
 }
 
 .clay-btn-primary:hover:not(:disabled) {
-  background: #3b5943;
-  box-shadow: 0 6px 20px rgba(82, 121, 92, 0.35);
-  transform: translateY(-1px);
+  transform: translateY(2px);
+  box-shadow: 0 6px 0 #183e25, 0 10px 18px rgba(24, 62, 37, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.6), inset 0 -2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.clay-btn-primary:active:not(:disabled) {
+  transform: translateY(6px);
+  box-shadow: 0 2px 0 #183e25, 0 4px 8px rgba(24, 62, 37, 0.35), inset 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 -1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.clay-btn-secondary {
+  background: linear-gradient(180deg, #ffffff 0%, #f0f5ee 100%);
+  box-shadow: 0 6px 0 #c4d4c2, 0 12px 18px rgba(35, 50, 38, 0.14), inset 0 2px 2px #ffffff, inset 0 -2px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateY(0);
+  color: #1e3d27;
+}
+
+.clay-btn-secondary:hover {
+  transform: translateY(2px);
+  box-shadow: 0 4px 0 #c4d4c2, 0 8px 14px rgba(35, 50, 38, 0.12), inset 0 2px 3px #ffffff, inset 0 -1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.clay-btn-secondary:active {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 #c4d4c2, 0 3px 6px rgba(35, 50, 38, 0.1), inset 0 2px 3px rgba(0, 0, 0, 0.08);
+}
+
+.clay-btn-subtle {
+  background: linear-gradient(180deg, #244d37 0%, #173827 100%);
+  box-shadow: 0 4px 0 #0f271a, 0 8px 14px rgba(0, 0, 0, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.25), inset 0 -2px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clay-btn-subtle:hover {
+  transform: translateY(1.5px);
+  box-shadow: 0 2.5px 0 #0f271a, 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.clay-btn-subtle:active {
+  transform: translateY(3.5px);
+  box-shadow: 0 0.5px 0 #0f271a, 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.clay-card-light {
+  background: #FAF7F2;
+  box-shadow: 10px 14px 28px rgba(35, 54, 40, 0.12), -6px -6px 18px rgba(255, 255, 255, 0.95), inset 3px 3px 6px rgba(255, 255, 255, 0.9), inset -3px -3px 6px rgba(36, 65, 45, 0.08);
+}
+
+.clay-card-sage {
+  background: #EAF0EB;
+  box-shadow: 10px 14px 28px rgba(35, 54, 40, 0.14), -6px -6px 18px rgba(255, 255, 255, 0.8), inset 3px 3px 6px rgba(255, 255, 255, 0.8), inset -3px -3px 6px rgba(30, 50, 36, 0.1);
+}
+
+.clay-card-forest {
+  background: #25422F;
+  box-shadow: 12px 18px 36px rgba(10, 26, 17, 0.45), -6px -6px 16px rgba(82, 130, 96, 0.25), inset 2px 2px 5px rgba(140, 214, 165, 0.35), inset -3px -3px 8px rgba(5, 18, 10, 0.6);
+}
+
+.clay-card-charcoal {
+  background: #2D3A2F;
+  box-shadow: 12px 18px 36px rgba(10, 20, 14, 0.5), -6px -6px 16px rgba(78, 100, 82, 0.2), inset 2px 2px 5px rgba(145, 175, 150, 0.25), inset -3px -3px 8px rgba(8, 18, 12, 0.7);
+}
+
+.clay-tab-active {
+  background: linear-gradient(180deg, #388452 0%, #29683e 100%);
+  box-shadow: 0 5px 0 #183e25, 0 8px 15px rgba(24, 62, 37, 0.4), inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -2px 2px rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+}
+
+.clay-tab-inactive {
+  background: #182e22;
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.4), inset -1px -1px 2px rgba(255, 255, 255, 0.06);
+  color: #a7d1b3;
+  border: 1px solid rgba(78, 122, 93, 0.25);
+}
+
+.clay-tab-inactive:hover {
+  background: #1d3829;
+  color: #ffffff;
+}
+
+.clay-pill-badge {
+  box-shadow: 3px 4px 10px rgba(30, 50, 36, 0.12), -2px -2px 6px rgba(255, 255, 255, 0.8), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.9), inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.08);
+}
+
+.clay-pill-badge-dark {
+  box-shadow: 4px 6px 14px rgba(0, 0, 0, 0.3), -2px -2px 6px rgba(98, 254, 173, 0.15), inset 1.5px 1.5px 3px rgba(98, 254, 173, 0.3), inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4);
+}
+
+.font-serif-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-sans-ui {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
 }
